@@ -17,7 +17,21 @@ Onedrive index transplanted from Heymind.
 2. 按照<a href='https://github.com/SomeBottle/OdIndex/blob/master/heymind.md' target='_blank'>Heymind</a>的方式获取refresh_token  
 **PS:Heymind的工具目前测试只支持个人版，Business版请转弯去Oneindex**  
 3. 在index.php替换相关参数  
-
+4. 设置伪静态:  
+  
+  ```
+  if (!-f $request_filename){
+    set $rule_0 1$rule_0;
+  }
+  if (!-d $request_filename){
+    set $rule_0 2$rule_0;
+  }
+  if ($rule_0 = "21"){
+    rewrite ^/(.*)$ /?q=$1 last;
+  }
+  ```
+  如果是非根目录，要在伪静态规则上作相应调整。  
+  
 ## Config  
 其他配置类似Heymind的worker版，简单说一两个特殊的：  
 ```php
