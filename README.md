@@ -1,8 +1,9 @@
 # OdIndex
 Onedrive index transplanted from Heymind.
 
-最近发现Heymind写的<a href='https://github.com/heymind/OneDrive-Index-Cloudflare-Worker' target='_blank'>Cloudflare Worker</a>版的oneindex很好用，但尚存bug，发issue和邮件作者也没回答，遂移植了一个php版本.  
-原Heymind的Cloudflare Workers版OnedriveIndex使用**MIT协议**.  
+最近发现Heymind写的<a href='https://github.com/heymind/OneDrive-Index-Cloudflare-Worker' target='_blank'>Cloudflare Worker</a>版的oneindex很好用，但尚存bug，发issue和邮件作者也没回答，遂移植了一个php版本.
+
+> 原Heymind的Cloudflare Workers版OnedriveIndex使用**MIT协议**.  
 
 ## Features & Drawbacks  
 * 转发下载  
