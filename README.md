@@ -30,7 +30,7 @@ Onedrive index transplanted from Heymind.
     rewrite ^/(.*)$ /?q=$1 last;
   }
   ```
-  如果是非根目录，要在伪静态规则上作相应调整。  
+  如果是**非根目录**，要在伪静态规则上作相应调整。  
   
 ## Config  
 其他配置类似Heymind的worker版，简单说一两个特殊的：  
@@ -48,4 +48,4 @@ sitepath配置项是为了适应**站点非根目录**的，如果你的站点�
 useProxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
 
 ------------------
-### MIT LICENSE.
+### MIT LICENSE. 
