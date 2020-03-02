@@ -54,8 +54,11 @@ Onedrive index transplanted from Heymind.
 ```
 
 * useProxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
-* rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document ，没有开伪静态，你需要访问https://xxx/?/Document 来进行访问。  
+* rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。  
 **值得注意的是，rewrite=true时，sitepath要留空**  
+
+## Notice  
+访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
 
 ------------------
 ### MIT LICENSE. 
