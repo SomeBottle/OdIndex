@@ -119,7 +119,7 @@ function getParam($url,$param){/*获得url中的参数*/
 		return '';
 	}
 }
-function handleRequest($url){
+function handleRequest($url,$returnurl=false){
 	global $config;
 	$thumbnail=false;
 	$error='';
@@ -153,6 +153,12 @@ function handleRequest($url){
 	if($resp){
 	$data=json_decode($resp,true);
 	if(isset($data['file'])){/*返回的是文件*/
+	    if($returnurl){
+			return $data["@microsoft.graph.downloadUrl"];
+		}
+		if($data['name']=='.password'){/*阻止密码被获取到*/
+			die('Access denied');
+		}
 		handleFile($data["@microsoft.graph.downloadUrl"]);
 	}else if(isset($data['folder'])){/*返回的是目录*/
 		$render=renderFolderIndex($data['children'],parsepath($url));
@@ -200,8 +206,27 @@ function processhref($hf){/*根据伪静态是否开启处理href*/
 	}
 	return $hf;
 }
+function trimall($str){/*去除空格和换行*/
+    $arr=array(" ","　","\t","\n","\r");
+    return str_replace($arr, '', $str);  
+}
+function passwordform($fmd5){
+	return '<div class="items">
+	<div style="min-width:600px">
+	<h2 style="text-align:center;color:#6E6E6E">你需要输入密码来浏览目录</h2>
+    <form action="#" method="post" style="text-align:center;margin-bottom:20px">
+          <input type="password" name="password" placeholder="password"/>
+		  <input type="hidden" name="requestfolder" value="'.$fmd5.'"/>
+    </form>
+    </div>
+	</div>';
+}
 function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
     global $config,$pr;
+    @session_start();
+    if(!isset($_SESSION['passwd'])){
+		$_SESSION['passwd']=array();
+	}
 	$nav='<nav><a class="brand">Bottle Od</a></nav>';
 	$itemrender='';
 	$backhref='..';
@@ -220,9 +245,24 @@ function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
 		if(isset($v['folder'])){/*是目录*/
 			$itemrender.=item("folder", $v['name'], $v['size'],processhref($v['name'].'/'));
 		} else if (isset($v['file'])) {/*是文件*/
+		    $namemd5=md5($pr);/*获得文件所在目录路径md5，用于密码识别*/
+			$requesturl='http://request.yes/'.$pr.'.password';/*密码文件*/
+			if($v['name']=='.password'&&!isset($_SESSION['passwd'][$namemd5])){/*未提交过密码*/
+				$itemrender=passwordform($namemd5);
+				break;
+			}else if($v['name']=='.password'){/*提交过密码*/
+				$downurl=handleRequest($requesturl,true);/*获得密码文件下载链接*/
+				$password=request($downurl,'','GET',array());/*请求到文件*/
+				if(trimall($password)!==$_SESSION['passwd'][$namemd5]){/*密码错误*/
+					$itemrender=passwordform($namemd5);
+					break;
+				}
+			}else{
 			$itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($v['name']));
+			}
 		}
 	}
+	@session_write_close();
 	return renderHTML($nav.div('container',div('items',el('div',array('style="min-width:600px"'),$itemrender))));
 }
 function renderHTML($body){
@@ -234,10 +274,10 @@ function renderHTML($body){
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
       <title>Bottle Od</title>
       <link href=\'https://fonts.loli.net/icon?family=Material+Icons\' rel=\'stylesheet\'>
-      <link href=\'https://cdn.jsdelivr.net/gh/heymind/OneDrive-Index-Cloudflare-Worker/themes/material.css\' rel=\'stylesheet\'>
+      <link href=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex/assets/material.css\' rel=\'stylesheet\'>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism-solarizedlight.css">
 	  <script>var readmefile="'.processhref('readme.md').'";</script>
-      <script type="module" src=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex/script.js\'></script>
+      <script type="module" src=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex/assets/script.js\'></script>
     </head>
     <body>
       '.$body.'
@@ -258,6 +298,14 @@ function handleFile($url){
 	    header('Location: '.substr($url,6));
 	}
 }
+/*Password Processor*/
+@session_start();
+$passrq=@$_POST['requestfolder'];
+$passwd=@$_POST['password'];
+if(!empty($passrq)){
+	$_SESSION['passwd'][$passrq]=md5($passwd);/*提交并储存密码*/
+}
+@session_write_close();
 /*Request Processor*/
 $pr=preg_replace('~/~','',$_SERVER['QUERY_STRING'],1);/*Get query*/
 if(empty($pr)){
