@@ -1,4 +1,10 @@
 <?php
+/*
+Original design by Heymind:
+https://github.com/heymind/OneDrive-Index-Cloudflare-Worker
+Transplanted by Somebottle.
+Based on MIT LICENSE.
+*/
 error_reporting(E_ALL & ~E_NOTICE);
 $config=array(
     "refresh_token"=>"",
@@ -6,6 +12,7 @@ $config=array(
     "client_secret"=> "",
     "redirect_uri"=> "https://heymind.github.io/tools/microsoft-graph-api-auth", 
     'base'=>"/",
+	'rewrite'=>false,
 	'sitepath'=>'',
     "cache"=>array(
         'enable'=>true
@@ -138,8 +145,6 @@ function handleRequest($url){
 		}
 	}
 	/*Normally request*/
-	$path=urlencode($path);
-	$path=str_ireplace('+','%20',$path);
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
 	$resp=request($rq,'','GET',array(
 	    'Content-type: application/x-www-form-urlencoded',
@@ -156,7 +161,7 @@ function handleRequest($url){
 		return 'Error response:'.var_export($resp,true);
 	}
 	}else{
-		return '<!--NotFound:'.$path.'-->';
+		return '<!--NotFound:'.urldecode($path).'-->';
 	}
 }
 function el($tag,$attrs,$content){
@@ -188,17 +193,34 @@ function mime2icon($t){
 		return 'description';
 	}
 }
+function processhref($hf){/*根据伪静态是否开启处理href*/
+	global $config,$pr;
+	if(!$config['rewrite']){
+		return '?/'.$pr.$hf;
+	}
+	return $hf;
+}
 function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
+    global $config,$pr;
 	$nav='<nav><a class="brand">Bottle Od</a></nav>';
 	$itemrender='';
+	$backhref='..';
+	if(!$config['rewrite']){/*回到上一目录*/
+		$hfarr=array_filter(explode('/',$pr));
+		array_pop($hfarr);
+		$backhref='?/';
+		foreach($hfarr as $v){
+			$backhref.=$v.'/';
+		}
+	}
 	if($isIndex!=='/'){
-		$itemrender=item("folder", "..");/*在根目录*/
+		$itemrender=item("folder", "..",false,$backhref);/*在根目录*/
 	}
 	foreach($items as $v){
 		if(isset($v['folder'])){/*是目录*/
-			$itemrender.=item("folder", $v['name'], $v['size'],$v['name'].'/');
+			$itemrender.=item("folder", $v['name'], $v['size'],processhref($v['name'].'/'));
 		} else if (isset($v['file'])) {/*是文件*/
-			$itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],'./'.$v['name']);
+			$itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($v['name']));
 		}
 	}
 	return renderHTML($nav.div('container',div('items',el('div',array('style="min-width:600px"'),$itemrender))));
@@ -214,7 +236,8 @@ function renderHTML($body){
       <link href=\'https://fonts.loli.net/icon?family=Material+Icons\' rel=\'stylesheet\'>
       <link href=\'https://cdn.jsdelivr.net/gh/heymind/OneDrive-Index-Cloudflare-Worker/themes/material.css\' rel=\'stylesheet\'>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism-solarizedlight.css">
-      <script type="module" src=\'https://cdn.jsdelivr.net/gh/heymind/OneDrive-Index-Cloudflare-Worker/script.js\'></script>
+	  <script>var readmefile="'.processhref('readme.md').'";</script>
+      <script type="module" src=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex/script.js\'></script>
     </head>
     <body>
       '.$body.'
@@ -236,7 +259,7 @@ function handleFile($url){
 	}
 }
 /*Request Processor*/
-$pr=$_GET['q'];
+$pr=preg_replace('~/~','',$_SERVER['QUERY_STRING'],1);/*Get query*/
 if(empty($pr)){
 	$pr='';
 }
