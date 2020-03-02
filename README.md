@@ -12,6 +12,7 @@ Onedrive index transplanted from Heymind.
 * 支持站点非根目录  
 * 没有移植缓存系统  
 * 支持缩略图  
+* 支持密码保护目录  
 * 没有文件上传功能  
 
 ## Deployment  
@@ -34,6 +35,10 @@ Onedrive index transplanted from Heymind.
   ```
   如果是**非根目录**，要在伪静态规则上作相应调整。  
   
+## Password  
+在你需要保护的目录下放入.password文件，注意在password文件内写入的密码必须是**32位md5加密后**的（不再用明文）.  
+**密码仅仅能保护当前目录，不排除有人得知了目录下的子目录或者文件**  
+
 ## Config  
 其他配置类似Heymind的worker版，简单说一两个特殊的：  
 ```php
