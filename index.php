@@ -77,7 +77,11 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 function parsepath($u){/*得出处理后的路径*/
 	global $config;
 	$up=parse_url($u)['path'];
-	return str_ireplace($config['sitepath'],'',$up);
+	$rt=str_ireplace($config['sitepath'],'',$up);
+	if($config['rewrite']){
+		$rt=explode('&',$rt)[0];/*rewrite开启后服务器程序会自动把?转换为&*/
+	}
+	return $rt;
 }
 function getAccessToken($update=false){/*获得AccessToken*/
 	global $config;
@@ -102,7 +106,11 @@ function getAccessToken($update=false){/*获得AccessToken*/
 	}
 }
 function getParam($url,$param){/*获得url中的参数*/
-	$prs=parse_url($url)['query'];
+    global $config;
+    $prs=parse_url($url)['query'];
+    if($config['rewrite']){/*rewrite开启后服务器程序会自动把?转换为&*/
+		$prs=$url;
+	}
 	$prs=explode('&',$prs);
 	$arr=array();
 	foreach($prs as $v){
