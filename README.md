@@ -15,6 +15,10 @@ Onedrive index transplanted from Heymind.
 * 支持密码保护目录  
 * 没有文件上传功能  
 
+## To-do list
+- [ ] smartCache智能(其实并不智能)缓存  
+- [ ] 文件简单预览  
+
 ## Deployment  
 1. 准备一个网站服务器，把仓库中两个.php玩意丢进去  
 2. 按照<a href='https://github.com/SomeBottle/OdIndex/blob/master/heymind.md' target='_blank'>Heymind</a>的方式获取refresh_token  
