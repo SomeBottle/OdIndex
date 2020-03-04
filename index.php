@@ -37,10 +37,7 @@ function modifyarr($arr,$search,$v){/*搜素并编辑数组*/
 	}
 }
 function request($u,$q,$method='POST',$head=array('Content-type:application/x-www-form-urlencoded'),$headerget=false,$retry=false) {/*poster*/
-    $rqcontent='';
-    if($method=='POST'){
-       $rqcontent=http_build_query($q);
-	}
+	$rqcontent= ($method=='POST') ? http_build_query($q) : '';
     $opts = array(
         'http' => array(
             'method' => $method,
@@ -86,20 +83,20 @@ function parsepath($u){/*得出处理后的路径*/
 function getAccessToken($update=false){/*获得AccessToken*/
 	global $config;
 	if($update||!file_exists('./token.php')){
-	$resp=request('https://login.microsoftonline.com/common/oauth2/v2.0/token',array(
-	    'client_id'=>$config['client_id'],
-		'redirect_uri'=>$config['redirect_uri'],
-		'client_secret'=>$config['client_secret'],
-		'refresh_token'=>$config['refresh_token'],
-		'grant_type'=>'refresh_token'
-	));
-	$data=json_decode($resp,true);
-	if(isset($data['access_token'])){
-		file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";?>');
-		return $data['access_token'];
-	}else{
-		die('Failed to get accesstoken.');
-	}
+	    $resp=request('https://login.microsoftonline.com/common/oauth2/v2.0/token',array(
+	        'client_id'=>$config['client_id'],
+		    'redirect_uri'=>$config['redirect_uri'],
+		    'client_secret'=>$config['client_secret'],
+		    'refresh_token'=>$config['refresh_token'],
+		    'grant_type'=>'refresh_token'
+	    ));
+	    $data=json_decode($resp,true);
+	    if(isset($data['access_token'])){
+		    file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";?>');
+		    return $data['access_token'];
+	    }else{
+		    die('Failed to get accesstoken.');
+	    }
 	}else{
 		require './token.php';
 		return $token;
@@ -115,11 +112,7 @@ function getParam($url,$param){/*获得url中的参数*/
 	$arr=array();
 	foreach($prs as $v){
 		$each=explode('=',$v);
-		if(isset($each[1])){
-		    $arr[$each[0]]=$each[1];
-		}else{
-			$arr[$each[0]]='';
-		}
+		isset($each[1]) ? ($arr[$each[0]]=$each[1]) : ($arr[$each[0]]='');/*参数输入数组*/
 	}
 	if(isset($arr[$param])){
 	    return $arr[$param];
@@ -129,18 +122,13 @@ function getParam($url,$param){/*获得url中的参数*/
 }
 function handleRequest($url,$returnurl=false){
 	global $config;
-	$thumbnail=false;
 	$error='';
 	$accessToken=getAccessToken();/*获得accesstoken*/
 	$path=parsepath($url);
-	if($path=='/'){/*特殊处理*/
-		$path='';
-	}
+	$path=='/' ? $path='' : $path;/*根目录特殊处理*/
 	if($config['thumbnail']){
 		$thumb=getParam($url,'thumbnail');/*获得缩略图尺寸*/
-		if(!empty($thumb)){
-			$thumbnail=$thumb;
-		}
+		$thumbnail=empty($thumb) ? false : $thumbnail=$thumb;/*判断请求的是不是缩略图*/
 	}
 	if($thumbnail){/*如果是请求缩略图*/
 		$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.':/thumbnails/0/'.$thumbnail.'/content';
@@ -148,9 +136,7 @@ function handleRequest($url,$returnurl=false){
 		   'Content-type: application/x-www-form-urlencoded',
 		   'Authorization: bearer '.$accessToken
 		),true);
-		if($resp){
-		return handleFile($resp['Location']);
-		}
+		if($resp) return handleFile($resp['Location']);
 	}
 	/*Normally request*/
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
@@ -159,21 +145,17 @@ function handleRequest($url,$returnurl=false){
 		'Authorization: bearer '.$accessToken
     ));
 	if($resp){
-	$data=json_decode($resp,true);
-	if(isset($data['file'])){/*返回的是文件*/
-	    if($returnurl){
-			return $data["@microsoft.graph.downloadUrl"];
-		}
-		if($data['name']=='.password'){/*阻止密码被获取到*/
-			die('Access denied');
-		}
-		handleFile($data["@microsoft.graph.downloadUrl"]);
-	}else if(isset($data['folder'])){/*返回的是目录*/
-		$render=renderFolderIndex($data['children'],parsepath($url));
-		return $render;
-	}else{
-		return 'Error response:'.var_export($resp,true);
-	}
+	    $data=json_decode($resp,true);
+	    if(isset($data['file'])){/*返回的是文件*/
+	        if($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得.password文件*/
+		    if($data['name']=='.password') die('Access denied');/*阻止密码被获取到*/
+		    handleFile($data["@microsoft.graph.downloadUrl"]);
+	    }else if(isset($data['folder'])){/*返回的是目录*/
+		    $render=renderFolderIndex($data['children'],parsepath($url));/*渲染目录*/
+		    return $render;
+	    }else{
+		    return 'Error response:'.var_export($resp,true);
+	    }
 	}else{
 		return '<!--NotFound:'.urldecode($path).'-->';
 	}
@@ -186,14 +168,8 @@ function div($className,$content){
 	return el('div',array('class='.$className),$content);
 }
 function item($icon,$filename,$size=false,$href=false){
-	if(!$href){
-		$href=$filename;
-	}
-	if($size){
-		$sizeitem='size="'.$size.'"';
-	}else{
-		$sizeitem='';
-	}
+	$href=$href ?: $href=$filename;/*没有指定链接自动指定文件名*/
+	$sizeitem=$size ? ('size="'.$size.'"') : '';/*在标签附上文件大小*/
 	return el('a',array('href="'.$href.'"','class="item"',$sizeitem),el('i',array('class="material-icons"'),$icon).$filename);
 }
 function mime2icon($t){
@@ -209,16 +185,14 @@ function mime2icon($t){
 }
 function processhref($hf){/*根据伪静态是否开启处理href*/
 	global $config,$pr;
-	if(!$config['rewrite']){
-		return '?/'.$pr.$hf;
-	}
+	if(!$config['rewrite']) return '?/'.$pr.$hf;/*没开伪静态，请求处理*/
 	return $hf;
 }
 function trimall($str){/*去除空格和换行*/
     $arr=array(" ","　","\t","\n","\r");
     return str_replace($arr, '', $str);  
 }
-function passwordform($fmd5){
+function passwordform($fmd5){/*密码输入模板*/
 	return '<div class="items">
 	<div style="min-width:600px">
 	<h2 style="text-align:center;color:#6E6E6E">你需要输入密码来浏览目录</h2>
@@ -232,11 +206,9 @@ function passwordform($fmd5){
 function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
     global $config,$pr;
     @session_start();
-    if(!isset($_SESSION['passwd'])){
-		$_SESSION['passwd']=array();
-	}
-	$nav='<nav><a class="brand">Bottle Od</a></nav>';
-	$itemrender='';
+    if(!isset($_SESSION['passwd'])) $_SESSION['passwd']=array();/*密码是否存在*/
+	$nav='<nav><a class="brand">Bottle Od</a></nav>';/*导航栏模板*/
+	$itemrender='';/*文件列表渲染变量*/
 	$backhref='..';
 	if(!$config['rewrite']){/*回到上一目录*/
 		$hfarr=array_filter(explode('/',$pr));
@@ -263,10 +235,10 @@ function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
 				$password=request($downurl,'','GET',array());/*请求到文件*/
 				if(trimall($password)!==$_SESSION['passwd'][$namemd5]){/*密码错误*/
 					$itemrender=passwordform($namemd5);
-					break;
+					break;/*阻止文件列表加载*/
 				}
 			}else{
-			$itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($v['name']));
+			    $itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($v['name']));
 			}
 		}
 	}
