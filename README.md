@@ -6,7 +6,7 @@ Onedrive index transplanted from Heymind.
 > 原Heymind的Cloudflare Workers版OnedriveIndex使用**MIT协议**.  
 
 ## Features & Drawbacks  
-* 转发下载  
+* 转发下载（要过服务器流量[建议是国外服务器]，但能快很多）   
 * md小缩略图修复  
 * accesstoken有需要时自动刷新  
 * 支持站点非根目录  
