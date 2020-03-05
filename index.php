@@ -5,7 +5,8 @@ https://github.com/heymind/OneDrive-Index-Cloudflare-Worker
 Transplanted by Somebottle.
 Based on MIT LICENSE.
 */
-error_reporting(E_ALL & ~E_NOTICE);
+error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
+date_default_timezone_set("Asia/Shanghai");
 $config=array(
     "refresh_token"=>"",
     "client_id"=>"",
@@ -15,11 +16,22 @@ $config=array(
 	'rewrite'=>false,
 	'sitepath'=>'',
     "cache"=>array(
-        'enable'=>true
+        'smart'=>true,
+		'expire'=>1200 /*In seconds*/
     ),
     'thumbnail'=>true,
     'useProxy'=>true
 );
+/*Initialization*/
+if(!is_dir('./cache')) mkdir('./cache');
+$conf=array(/*Initialize conf*/
+	'requests'=>0,
+    'lastcount'=>time(),
+	'periods'=>array(),
+	'cachestart'=>false
+);
+if(!file_exists('./cache.php')) file_put_contents('./cache.php','<?php $ct='.var_export($conf,true).';?>');
+
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
 	foreach($a as $val){
 		if(stripos($val,strval($v))!==false){
@@ -46,6 +58,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 			'content'=>$rqcontent
         )
     );
+	smartCache();/*智能缓存*/
 	if($headerget){
 	    stream_context_set_default($opts);
 		$hd=@get_headers($u,1);
@@ -278,6 +291,63 @@ function handleFile($url){
 	    header('Location: '.substr($url,6));
 	}
 }
+function cacheControl($mode,$path,$arr=false){/*缓存控制*/
+    global $config;
+	$cf=getCache('./cache.php');
+	$rt=true;
+	$starttime=$cf['cachestart'];
+	if($starttime&&(time()-$starttime)>=$config['cache']['expire']){/*超出缓存时间*/
+		$cf['cachestart']=false;
+		cacheClear();
+		$rt=false;
+	}else if(ifCacheStart()){/*缓存模式开启*/
+		$file='./cache/'.md5($path).'.php';
+		if($mode=='write'){/*路径存在，写入缓存*/
+			file_put_contents($file,'<?php $ct='.var_export($arr,true).';?>');
+		}else if($mode=='read'&&file_exists($file)){/*路径存在，读缓存*/
+			$rt=getCache($file);
+		}else{/*缓存不存在*/
+			$rt=false;
+		}
+	}else{
+		$rt=false;
+	}
+	file_put_contents('./cache.php','<?php $ct='.var_export($cf,true).';?>');
+	return $rt;
+}
+function cacheClear(){/*缓存清除*/
+	$cfile=scandir('./cache');
+	foreach($cfile as $v){
+		if($v!=='.'&&$v!=='..') unlink('./cache/'.$v);
+	}
+}
+function ifCacheStart(){/*缓存是否开启了*/
+	$arr=getCache('./cache.php');
+	return ($arr['cachestart']>0);
+}
+function getCache($file){
+	require $file;
+	return $ct;
+}
+function smartCache(){/*处理缓存*/
+    global $config;
+	if(!$config['cache']['smart']) return false;/*未开启缓存直接返回*/
+	$arr=getCache('./cache.php');
+	$lag=time()-$arr['lastcount'];
+	if($lag >= 30){
+		$velo=round($arr['requests']/$lag,2);/*获得速度,至少统计30秒*/
+		$arr['lastcount']=time();
+		array_push($arr['periods'],$velo);
+	    if(count($arr['periods'])>10) array_shift($arr['periods']);
+		$arr['requests']=0;
+	}else{
+		$arr['requests']+=1;
+		$velo=false;
+	}
+	$average=@array_sum($arr['periods'])/count($arr['periods']);
+	if(!$arr['cachestart']&&($velo&&$velo>=0.9||$average>0.5)) $arr['cachestart']=time();/*开启智能缓存*/
+	file_put_contents('./cache.php','<?php $ct='.var_export($arr,true).';?>');/*rate limit(concurrent)*/
+}
 /*Password Processor*/
 @session_start();
 $passrq=@$_POST['requestfolder'];
@@ -294,5 +364,16 @@ if(empty($pr)){
 $self=substr($_SERVER['PHP_SELF'],strrpos($_SERVER['PHP_SELF'],'/')+1);
 $pr=str_ireplace($self,'',$pr);
 $requesturl='http://request.yes/'.$pr;
-echo handleRequest($requesturl);
+/*Cache Processor*/
+@ob_start();/*缓冲区打开*/
+$cache=cacheControl('read',$pr);
+if(ifCacheStart()&&!empty($cache[0])&&empty($passrq)){
+	$output=$cache[0];
+}else{
+    echo handleRequest($requesturl);
+    $output=ob_get_contents();
+	if(ifCacheStart()) cacheControl('write',$pr,array($output));
+}
+@ob_end_clean();
+echo $output;
 ?>
