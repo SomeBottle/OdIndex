@@ -153,7 +153,8 @@ function handleRequest($url,$returnurl=false){
 	}
 	/*Normally request*/
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
-	$resp=request($rq,'','GET',array(
+	$cache=cacheControl('read',$path);/*请求的内容是否被缓存*/
+	$resp=(ifCacheStart()&&!empty($cache[0])) ? $cache[0] : request($rq,'','GET',array(
 	    'Content-type: application/x-www-form-urlencoded',
 		'Authorization: bearer '.$accessToken
     ));
@@ -162,7 +163,9 @@ function handleRequest($url,$returnurl=false){
 	    if(isset($data['file'])){/*返回的是文件*/
 	        if($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得.password文件*/
 		    if($data['name']=='.password') die('Access denied');/*阻止密码被获取到*/
+			/*构建文件下载链接缓存*/
 		    handleFile($data["@microsoft.graph.downloadUrl"]);
+		    if(ifCacheStart()&&!$cache) cacheControl('write',$path,array($resp));/*只有下载链接储存缓存*/
 	    }else if(isset($data['folder'])){/*返回的是目录*/
 		    $render=renderFolderIndex($data['children'],parsepath($url));/*渲染目录*/
 		    return $render;
@@ -322,8 +325,9 @@ function cacheClear(){/*缓存清除*/
 	}
 }
 function ifCacheStart(){/*缓存是否开启了*/
+    global $config;
 	$arr=getCache('./cache.php');
-	return ($arr['cachestart']>0);
+	return ($arr['cachestart']>0&&$config['cache']['smart']);
 }
 function getCache($file){
 	require $file;
