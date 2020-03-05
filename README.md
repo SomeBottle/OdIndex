@@ -10,7 +10,7 @@ Onedrive index transplanted from Heymind.
 * md小缩略图修复  
 * accesstoken有需要时自动刷新  
 * 支持站点非根目录  
-* 没有移植缓存系统  
+* smartCache缓存系统  
 * 支持缩略图  
 * 支持密码保护目录  
 * 没有文件上传功能  
