@@ -149,7 +149,7 @@ function handleRequest($url,$returnurl=false){
 		   'Content-type: application/x-www-form-urlencoded',
 		   'Authorization: bearer '.$accessToken
 		),true);
-		if($resp) return handleFile($resp['Location']);
+		if($resp) return handleFile($resp['Location'],true);/*强制不用代理*/
 	}
 	/*Normally request*/
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
@@ -285,9 +285,9 @@ function renderHTML($body){
     </body>
   </html>';
 }
-function handleFile($url){
+function handleFile($url,$forceorigin=false){/*forceorigin为true时强制不用代理，这里用于缩略图*/
 	global $config;
-	if($config['useProxy']){
+	if($config['useProxy']&&!$forceorigin){
 		$url=$config['sitepath'].'/odproxy.php?'.substr($url,6);
 		header('Location: '.$url);
 	}else{
