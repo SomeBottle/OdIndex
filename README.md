@@ -73,7 +73,7 @@ Onedrive index transplanted from Heymind.
 ```php
 "cache"=>array(
     'smart'=>true,
-		'expire'=>1200 /*In seconds*/
+    'expire'=>1200 /*In seconds*/
 ),
 ```
 
