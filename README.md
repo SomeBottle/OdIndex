@@ -16,7 +16,7 @@ Onedrive index transplanted from Heymind.
 * 没有文件上传功能  
 
 ## To-do list
-- [ ] smartCache 智能缓存（其实并不智能）  
+- [x] smartCache 智能缓存（其实并不智能）  
 - [ ] 文件简单预览  
 
 ## Deployment  
