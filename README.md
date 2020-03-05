@@ -69,6 +69,19 @@ Onedrive index transplanted from Heymind.
 
 **值得注意的是，rewrite=true时，sitepath要留空**  
 
+## Smart Cache  
+```php
+"cache"=>array(
+    'smart'=>true,
+		'expire'=>1200 /*In seconds*/
+),
+```
+
+SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配置项只有以上两个。  
+
+* smart 若为true则开启smartCache  
+* expire 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
+
 ## Notice  
 
 访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
