@@ -85,7 +85,9 @@ SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配
 
 ## Notice  
 
-访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
+* 访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
+
+* 如果特别特别久没有访问了，需要更换refresh_token，**删掉生成的token.php，在index.php头部修改新获取的refreshtoken**即可.  
 
 ------------------
 ### MIT LICENSE. 
