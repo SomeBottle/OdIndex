@@ -33,10 +33,9 @@ $conf=array(/*Initialize conf*/
 if(!file_exists('./cache.php')) file_put_contents('./cache.php','<?php $ct='.var_export($conf,true).';?>');
 
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
-	foreach($a as $val){
-		if(stripos($val,strval($v))!==false){
-			return true;
-		}
+    $str=join(' ',$a);
+	if(stripos($str,strval($v))!==false){
+		return true;
 	}
 	return false;
 }
