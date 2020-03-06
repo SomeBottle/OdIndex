@@ -61,7 +61,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 	if($headerget){
 	    stream_context_set_default($opts);
 		$hd=@get_headers($u,1);
-		if(valueinarr(401,$hd)&&!$retry){/*accesstoken需要刷新*/
+		if(valueinarr('401 Unauthorized',$hd)&&!$retry){/*accesstoken需要刷新*/
 			$newtoken=getAccessToken(true);
 			$head=modifyarr($head,'Authorization','Authorization: bearer '.$newtoken);/*获得新token重新请求*/
 		    return request($u,$q,$method,$head,$headerget,true);
@@ -71,7 +71,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
         $ct = stream_context_create($opts);
         $result = @file_get_contents($u, false, $ct);
 		$backhead=$http_response_header;/*获得返回头*/
-		if(valueinarr(401,$backhead)&&!$retry){/*accesstoken需要刷新*/
+		if(valueinarr('401 Unauthorized',$backhead)&&!$retry){/*accesstoken需要刷新*/
 			$newtoken=getAccessToken(true);
 			$head=modifyarr($head,'Authorization','Authorization: bearer '.$newtoken);/*获得新token重新请求*/
 		    return request($u,$q,$method,$head,$headerget,true);
@@ -288,7 +288,7 @@ function renderHTML($body){
       <footer><p>Original design by <a href="https://github.com/heymind/OneDrive-Index-Cloudflare-Worker">Heymind</a>.</p></footer>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/prism.min.js" data-manual></script>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/plugins/autoloader/prism-autoloader.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@latest/othumb.m.js"></script>
+      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.4/othumb.m.js"></script>
     </body>
   </html>';
 }
