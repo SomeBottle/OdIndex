@@ -288,7 +288,7 @@ function renderHTML($body){
       <footer><p>Original design by <a href="https://github.com/heymind/OneDrive-Index-Cloudflare-Worker">Heymind</a>.</p></footer>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/prism.min.js" data-manual></script>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/plugins/autoloader/prism-autoloader.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.4/othumb.m.js"></script>
+      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.5/othumb.m.js"></script>
     </body>
   </html>';
 }
