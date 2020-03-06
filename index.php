@@ -93,6 +93,14 @@ function parsepath($u){/*得出处理后的路径*/
 	}
 	return $rt;
 }
+function getRefreshToken(){/*从token文件中或本脚本中取refreshtoken*/
+    global $config;
+	if(file_exists('./token.php')){
+		return isset($refresh) ? $refresh : $config['refresh_token'];
+	}else{
+		return $config['refresh_token'];
+	}
+}
 function getAccessToken($update=false){/*获得AccessToken*/
 	global $config;
 	if($update||!file_exists('./token.php')){
@@ -100,12 +108,12 @@ function getAccessToken($update=false){/*获得AccessToken*/
 	        'client_id'=>$config['client_id'],
 		    'redirect_uri'=>$config['redirect_uri'],
 		    'client_secret'=>$config['client_secret'],
-		    'refresh_token'=>$config['refresh_token'],
+		    'refresh_token'=>getRefreshToken(),
 		    'grant_type'=>'refresh_token'
 	    ));
 	    $data=json_decode($resp,true);
-	    if(isset($data['access_token'])){
-		    file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";?>');
+	    if(isset($data['access_token'])){/*存入到token文件*/
+		    file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";$refresh="'.$data['refresh_token'].'";?>');
 		    return $data['access_token'];
 	    }else{
 		    die('Failed to get accesstoken.');
