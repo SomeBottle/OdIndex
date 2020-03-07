@@ -5,6 +5,7 @@ https://github.com/heymind/OneDrive-Index-Cloudflare-Worker
 Transplanted by Somebottle.
 Based on MIT LICENSE.
 */
+set_time_limit(60);
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 date_default_timezone_set("Asia/Shanghai");
 $config=array(
@@ -17,12 +18,19 @@ $config=array(
 	'sitepath'=>'',
     "cache"=>array(
         'smart'=>true,
-		'expire'=>1200 /*In seconds*/
+		'expire'=>1800 /*In seconds*/
     ),
+	'queue'=>array(
+	    'start'=>true,/*防并发请求队列*/
+		'maxnum'=>15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
+		'lastfor'=>2700 /*In seconds*/
+	),
+	'servicebusy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
     'thumbnail'=>true,
     'useProxy'=>true
 );
 /*Initialization*/
+/*smartCache*/
 if(!is_dir('./cache')) mkdir('./cache');
 $conf=array(/*Initialize conf*/
 	'requests'=>0,
@@ -31,7 +39,14 @@ $conf=array(/*Initialize conf*/
 	'cachestart'=>false
 );
 if(!file_exists('./cache.php')) file_put_contents('./cache.php','<?php $ct='.var_export($conf,true).';?>');
-
+/*Queue*/
+$queue=array(
+    'performing'=>'',/*正在执行的请求id(无实际用途，仅作标记*/
+	'requesting'=>0,/*在队列中的任务数*/
+	'start'=>false
+);
+if(!file_exists('./queue.php')) file_put_contents('./queue.php','<?php $ct='.var_export($queue,true).';?>');
+/*InitializationFinished*/
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
     $str=join(' ',$a);
 	if(stripos($str,strval($v))!==false){
@@ -58,9 +73,11 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
         )
     );
 	smartCache();/*智能缓存*/
+	$queueid=queueChecker('add');/*增加请求到队列*/
 	if($headerget){
 	    stream_context_set_default($opts);
 		$hd=@get_headers($u,1);
+		queueChecker('del',true,$queueid);/*请求完毕，移除队列*/
 		if(valueinarr('401 Unauthorized',$hd)&&!$retry){/*accesstoken需要刷新*/
 			$newtoken=getAccessToken(true);
 			$head=modifyarr($head,'Authorization','Authorization: bearer '.$newtoken);/*获得新token重新请求*/
@@ -70,6 +87,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 	}else{
         $ct = stream_context_create($opts);
         $result = @file_get_contents($u, false, $ct);
+		queueChecker('del',true,$queueid);/*请求完毕，移除队列*/
 		$backhead=$http_response_header;/*获得返回头*/
 		if(valueinarr('401 Unauthorized',$backhead)&&!$retry){/*accesstoken需要刷新*/
 			$newtoken=getAccessToken(true);
@@ -161,10 +179,12 @@ function handleRequest($url,$returnurl=false){
 	/*Normally request*/
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
 	$cache=cacheControl('read',$path);/*请求的内容是否被缓存*/
+	empty($cache[0]) ?: $queueid=queueChecker('add');/*如果有缓存也要加入队列计算*/
 	$resp=(ifCacheStart()&&!empty($cache[0])) ? $cache[0] : request($rq,'','GET',array(
 	    'Content-type: application/x-www-form-urlencoded',
 		'Authorization: bearer '.$accessToken
     ));
+	empty($cache[0]) ?: queueChecker('del',true,$queueid);/*如果有缓存也要移除队列计算*/
 	if($resp){
 	    $data=json_decode($resp,true);
 	    if(isset($data['file'])){/*返回的是文件*/
@@ -303,7 +323,7 @@ function handleFile($url,$forceorigin=false){/*forceorigin为true时强制不用
 }
 function cacheControl($mode,$path,$arr=false){/*缓存控制*/
     global $config;
-	$cf=getCache('./cache.php');
+	$cf=getConfig('./cache.php');
 	$rt=true;
 	$starttime=$cf['cachestart'];
 	if($starttime&&(time()-$starttime)>=$config['cache']['expire']){/*超出缓存时间*/
@@ -315,7 +335,7 @@ function cacheControl($mode,$path,$arr=false){/*缓存控制*/
 		if($mode=='write'){/*路径存在，写入缓存*/
 			file_put_contents($file,'<?php $ct='.var_export($arr,true).';?>');
 		}else if($mode=='read'&&file_exists($file)){/*路径存在，读缓存*/
-			$rt=getCache($file);
+			$rt=getConfig($file);
 		}else{/*缓存不存在*/
 			$rt=false;
 		}
@@ -333,17 +353,18 @@ function cacheClear(){/*缓存清除*/
 }
 function ifCacheStart(){/*缓存是否开启了*/
     global $config;
-	$arr=getCache('./cache.php');
+	$arr=getConfig('./cache.php');
 	return ($arr['cachestart']>0&&$config['cache']['smart']);
 }
-function getCache($file){
+function getConfig($file){
 	require $file;
 	return $ct;
 }
-function smartCache(){/*处理缓存*/
+function smartCache(){/*处理缓存(还包括队列)*/
     global $config;
 	if(!$config['cache']['smart']) return false;/*未开启缓存直接返回*/
-	$arr=getCache('./cache.php');
+	$arr=getConfig('./cache.php');
+	$queueconf=getConfig('./queue.php');
 	$lag=time()-$arr['lastcount'];
 	if($lag >= 30){
 		$velo=round($arr['requests']/$lag,2);/*获得速度,至少统计30秒*/
@@ -357,8 +378,46 @@ function smartCache(){/*处理缓存*/
 	}
 	$average=@array_sum($arr['periods'])/count($arr['periods']);
 	if(!$arr['cachestart']&&($velo&&$velo>=0.9||$average>0.5)) $arr['cachestart']=time();/*开启智能缓存*/
+	if(!$queueconf['start']&&($velo&&$velo>=1.5||$average>1.2)) $queueconf['start']=time();/*开启队列*/
 	file_put_contents('./cache.php','<?php $ct='.var_export($arr,true).';?>');/*rate limit(concurrent)*/
+	file_put_contents('./queue.php','<?php $ct='.var_export($queueconf,true).';?>');/*储存配置*/
 }
+function queueChecker($statu,$waiting=false,$id=false){/*处理队列*/
+	global $config;
+	$returnid=md5(time());
+	$arr=getConfig('./queue.php');/*拿到队列的记录文件*/
+	if(!$config['queue']['start']||!$arr['start']) return false;/*未开启队列直接返回*/
+	$lag=isset($arr['start']) ? time()-intval($arr['start']) : 0 ;/*计算自开始队列之后过去多久了*/
+	usleep(500000);/*进来先等0.5秒*/
+	if(intval($arr['requesting'])>=$config['queue']['maxnum']&&!$waiting&&$arr['performing']!==$id){/*请求的量过大*/
+		header('Location: '.$config['servicebusy']);/*返回服务繁忙的图片*/
+		exit();
+	}
+	while(!empty($arr['performing'])){/*有请求正在执行，阻塞*/
+	    $arr['requesting']=!$waiting ? intval($arr['requesting'])+1 : $arr['requesting'];/*增加请求*/
+		usleep(500000);/*等0.5s*/
+		if($arr['performing']==$id) break;/*如果是正在执行的请求，不阻塞*/
+		return queueChecker($statu,true,$id);/*waiting标记为true，不会被当成新请求返回服务繁忙*/
+	}
+	switch($statu){
+		case "add":/*请求添加到队列*/
+		  $arr['performing']=$returnid;
+		  break;
+		case "del":
+		  $returnid=$id;
+		  $arr['performing']='';
+		  $arr['requesting']>0 ? $arr['requesting']-=1 : $arr['requesting']=0;/*请求执行完了*/
+		  break;
+	}
+	if($lag>=$config['queue']['lastfor']){/*超过了持续时间，关闭队列*/
+		$arr['start']=false;
+	    $arr['performing']='';
+		$arr['requesting']=0;
+	}
+	file_put_contents('./queue.php','<?php $ct='.var_export($arr,true).';?>');/*储存配置*/
+	return $returnid;/*把执行的id传回去*/
+}
+
 /*Password Processor*/
 @session_start();
 $passrq=@$_POST['requestfolder'];
