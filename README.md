@@ -86,9 +86,9 @@ SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配
 ## Smart Queue  
 ```php
 'queue'=>array(
-	    'start'=>true,/*防并发请求队列*/
-		  'maxnum'=>15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
-		  'lastfor'=>2700 /*In seconds*/
+     'start'=>true,/*防并发请求队列*/
+     'maxnum'=>15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
+     'lastfor'=>2700 /*In seconds*/
 ),
 'servicebusy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',
 ```
