@@ -83,6 +83,22 @@ SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配
 * smart 若为true则开启smartCache  
 * expire 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
 
+## Smart Queue  
+```php
+'queue'=>array(
+	    'start'=>true,/*防并发请求队列*/
+		  'maxnum'=>15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
+		  'lastfor'=>2700 /*In seconds*/
+),
+'servicebusy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',
+```
+
+SmartQueue会在游客对文件造成大量请求时防止并发情况出现，可以有效防止账户被微软限制.  
+
+* maxnum 是队列中存在的最多请求数，每请求一个未缓存页面、一个文件，在请求未完成之时全部当排队请求，而当**排队请求的量**超过了maxnum，会直接返回服务繁忙，也就是servicebusy的图片.  
+
+* lastfor 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比SmartCache的设置更长一点**.  
+
 ## Notice  
 
 * 访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
