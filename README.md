@@ -19,6 +19,7 @@ Onedrive index transplanted from Heymind.
 ## To-do list
 - [x] smartCache 智能缓存（其实并不智能）  
 - [ ] 文件简单预览  
+- [ ] 支持onedrive根目录文件列表  
 
 ## Deployment  
 1. 准备一个网站服务器，把仓库中两个.php玩意丢进去  
