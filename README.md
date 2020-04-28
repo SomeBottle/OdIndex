@@ -43,6 +43,9 @@ Onedrive index transplanted from Heymind.
   ```
   如果是**非根目录**，要在伪静态规则上作相应调整。  
   
+## Readme文件  
+在你需要展示说明文件的目录下放入readme.md文件，会自动进行解析并展示在该目录的文件列表下.  
+  
 ## Password  
 在你需要保护的目录下放入.password文件，注意在password文件内写入的密码必须是**小写32位md5加密后**的（不再用明文）.  
 
