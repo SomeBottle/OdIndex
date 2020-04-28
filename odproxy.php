@@ -8,6 +8,7 @@ $parsed = parse_url($rq);
 if (!isset($parsed['scheme'])) {
     $rq = 'https:' . $rq;
 }
+$rq=urldecode($rq);
 function typetrans($arr) {
     if (is_array($arr)) {
         $t = '';
