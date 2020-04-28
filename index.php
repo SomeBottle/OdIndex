@@ -169,12 +169,14 @@ function handleRequest($url,$returnurl=false){
 		$thumbnail=empty($thumb) ? false : $thumbnail=$thumb;/*判断请求的是不是缩略图*/
 	}
 	if($thumbnail){/*如果是请求缩略图*/
-		$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.':/thumbnails/0/'.$thumbnail.'/content';
+		$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.':/thumbnails';
 		$resp=request($rq,'','GET',array(
 		   'Content-type: application/x-www-form-urlencoded',
 		   'Authorization: bearer '.$accessToken
-		),true);
-		if($resp) return handleFile($resp['Location'],true);/*强制不用代理*/
+		));
+		$resp=json_decode($resp,true);
+		$rurl=$resp['value'][0][$thumbnail]['url'];
+		if($rurl){return handleFile($rurl,true);}else{return false;}/*强制不用代理*/
 	}
 	/*Normally request*/
 	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
