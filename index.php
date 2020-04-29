@@ -13,7 +13,7 @@ $config=array(
     "client_id"=>"",
     "client_secret"=> "",
     "redirect_uri"=> "https://heymind.github.io/tools/microsoft-graph-api-auth", 
-    'base'=>"/Share",
+    'base'=>"/",
 	'rewrite'=>false,
 	'sitepath'=>'',
     "cache"=>array(
@@ -158,6 +158,11 @@ function getParam($url,$param){/*获得url中的参数*/
 		return '';
 	}
 }
+function wrapPath($p){/*包装请求url*/
+	global $config;
+	$wrapped=$config['base'].$p;
+	return ($wrapped=='/'||$wrapped=='') ? '' : ':'.$wrapped;
+}
 function handleRequest($url,$returnurl=false){
 	global $config;
 	$error='';
@@ -179,7 +184,7 @@ function handleRequest($url,$returnurl=false){
 		if($rurl){return handleFile($rurl,true);}else{return false;}/*强制不用代理*/
 	}
 	/*Normally request*/
-	$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
+	$rq='https://graph.microsoft.com/v1.0/me/drive/root'.wrapPath($path).'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
 	$cache=cacheControl('read',$path);/*请求的内容是否被缓存*/
 	empty($cache[0]) ?: $queueid=queueChecker('add');/*如果有缓存也要加入队列计算*/
 	$resp=(ifCacheStart()&&!empty($cache[0])) ? $cache[0] : request($rq,'','GET',array(
