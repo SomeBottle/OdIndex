@@ -19,10 +19,10 @@ Onedrive index transplanted from Heymind.
 ## To-do list
 - [x] smartCache 智能缓存（其实并不智能）  
 - [x] 支持根目录文件列表  
-- [ ] 文件简单预览  
+- [x] 文件简单预览  
 
 ## Deployment  
-1. 准备一个网站服务器，把仓库中两个.php玩意丢进去  
+1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , preview.html**丢进去  
 
 2. 按照<a href='https://github.com/SomeBottle/OdIndex/blob/master/heymind/heymind.md' target='_blank'>Heymind</a>的方式获取refresh_token  
 **PS:Heymind的工具目前只测试了个人版，Business版请看一下<a href='https://github.com/heymind/OneDrive-Index-Cloudflare-Worker/issues' target='_blank'>issue</a>**  
@@ -56,6 +56,9 @@ Onedrive index transplanted from Heymind.
 
 **密码仅仅能保护当前目录，不排除有人得知了目录下的子目录或者文件**  
 
+## Preview.html  
+这是文件预览页面的模板，其中 **{{url}}** 代表文件的直链（非代理），而 **{{suffix}}** 是预览文件的后缀名.  
+
 ## Config  
 其他配置类似Heymind的worker版，简单说一两个特殊的：  
 
@@ -64,9 +67,13 @@ Onedrive index transplanted from Heymind.
 'base'=>'/Share',
 'rewrite'=>false,
 ...
-'useProxy'=>true  
+'useProxy'=>true,  
+'preview'=>true,  
+'previewsuffix'=>[...]  
 ```
 * base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为 "**/**"  
+
+* preview配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.previewsuffix是支持预览的文件格式，**不建议修改**.  
 
 * sitepath配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
 ```php
