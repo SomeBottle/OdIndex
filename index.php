@@ -27,6 +27,8 @@ $config=array(
 	),
 	'servicebusy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
     'thumbnail'=>true,
+	'preview'=>true,
+	'previewsuffix'=>['ogg','mp3','wav','m4a','mp4','webm','jpg','jpeg','png','gif','webp'],/*可预览的类型*/
     'useProxy'=>true
 );
 /*Initialization*/
@@ -140,6 +142,10 @@ function getAccessToken($update=false){/*获得AccessToken*/
 		return $token;
 	}
 }
+function suffix($f){/*从文件名后取出后缀名*/
+	$sp=explode('.',$f);
+	return $sp[count($sp)-1];
+}
 function getParam($url,$param){/*获得url中的参数*/
     global $config;
     $prs=parse_url($url)['query'];
@@ -171,7 +177,11 @@ function handleRequest($url,$returnurl=false){
 	$path=='/' ? $path='' : $path;/*根目录特殊处理*/
 	if($config['thumbnail']){
 		$thumb=getParam($url,'thumbnail');/*获得缩略图尺寸*/
-		$thumbnail=empty($thumb) ? false : $thumbnail=$thumb;/*判断请求的是不是缩略图*/
+		$thumbnail=empty($thumb) ? false : $thumb;/*判断请求的是不是缩略图*/
+	}
+	if($config['preview']){
+		$prev=getParam($url,'p');/*获得缩略图尺寸*/
+		$preview=empty($prev) ? false : $prev;
 	}
 	if($thumbnail){/*如果是请求缩略图*/
 		$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.':/thumbnails';
@@ -197,9 +207,13 @@ function handleRequest($url,$returnurl=false){
 	    if(isset($data['file'])){/*返回的是文件*/
 	        if($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得.password文件*/
 		    if($data['name']=='.password') die('Access denied');/*阻止密码被获取到*/
+			if(ifCacheStart()&&!$cache) cacheControl('write',$path,array($resp));/*只有下载链接储存缓存*/
 			/*构建文件下载链接缓存*/
-		    handleFile($data["@microsoft.graph.downloadUrl"]);
-		    if(ifCacheStart()&&!$cache) cacheControl('write',$path,array($resp));/*只有下载链接储存缓存*/
+			if($preview=='t'){/*预览模式*/
+				return handlePreview($data["@microsoft.graph.downloadUrl"],suffix($data['name']));/*渲染预览*/
+			}else{
+		        handleFile($data["@microsoft.graph.downloadUrl"]);
+			}
 	    }else if(isset($data['folder'])){/*返回的是目录*/
 		    $render=renderFolderIndex($data['children'],parsepath($url));/*渲染目录*/
 		    return $render;
@@ -288,7 +302,8 @@ function renderFolderIndex($items,$isIndex){/*渲染目录列表*/
 					break;/*阻止文件列表加载*/
 				}
 			}else{
-			    $itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($v['name']));
+				$hf=$config['preview'] ? $v['name'].'?p=t' : $v['name'];/*如果开了预览，所有文件都加上预览请求*/
+			    $itemrender.=item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'],processhref($hf));
 			}
 		}
 	}
@@ -312,10 +327,10 @@ function renderHTML($body){
     <body>
       '.$body.'
       <div style="flex-grow:1"></div>
-      <footer><p>Original design by <a href="https://github.com/heymind/OneDrive-Index-Cloudflare-Worker">Heymind</a>.</p></footer>
+      <footer><p>Originally designed by <a href="https://github.com/heymind/OneDrive-Index-Cloudflare-Worker">Heymind</a>.</p></footer>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/prism.min.js" data-manual></script>
       <script src="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/plugins/autoloader/prism-autoloader.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.5/othumb.m.js"></script>
+      <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
     </body>
   </html>';
 }
@@ -326,6 +341,18 @@ function handleFile($url,$forceorigin=false){/*forceorigin为true时强制不用
 		header('Location: '.$url);
 	}else{
 	    header('Location: '.substr($url,6));
+	}
+}
+function handlePreview($url,$suffix){/*预览渲染器(文件直链，后缀)*/
+    global $config;
+	$suffix=strtolower($suffix);
+	if(in_array($suffix,$config['previewsuffix'])){
+		$template=file_get_contents('./preview.html');
+		$template=str_ireplace('{{url}}',$url,$template);
+		$template=str_ireplace('{{suffix}}',$suffix,$template);
+		return $template;
+	}else{
+	   return handleFile($url);/*文件格式不支持预览，直接传递给文件下载*/
 	}
 }
 function cacheControl($mode,$path,$arr=false){/*缓存控制*/
