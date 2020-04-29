@@ -43,6 +43,10 @@ Onedrive index transplanted from Heymind.
   ```
   如果是**非根目录**，要在伪静态规则上作相应调整。  
   
+## Thumbnail缩略图  
+对于图片文件，可以直接获取不同尺寸的缩略图。 比如：https://xxx/pics/loli.png?thumbnail=medium  
+最常用值有**small,medium,large**  
+  
 ## Readme文件  
 在你需要展示说明文件的目录下放入readme.md文件，会自动进行解析并展示在该目录的文件列表下.  
   
