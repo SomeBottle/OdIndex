@@ -66,7 +66,7 @@ Onedrive index transplanted from Heymind.
 ...
 'useProxy'=>true  
 ```
-* base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 **/Share** 即可，如果你要展示**根目录的内容**，请将base项设置为 **/**  
+* base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为 "**/**"  
 
 * sitepath配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
 ```php
