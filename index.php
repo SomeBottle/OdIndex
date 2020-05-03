@@ -115,6 +115,7 @@ function parsepath($u){/*得出处理后的路径*/
 function getRefreshToken(){/*从token文件中或本脚本中取refreshtoken*/
     global $config;
 	if(file_exists('./token.php')){
+		require './token.php';
 		return isset($refresh) ? $refresh : $config['refresh_token'];
 	}else{
 		return $config['refresh_token'];
@@ -135,7 +136,8 @@ function getAccessToken($update=false){/*获得AccessToken*/
 		    file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";$refresh="'.$data['refresh_token'].'";?>');
 		    return $data['access_token'];
 	    }else{
-		    die('Failed to get accesstoken.');
+		    file_exists('./token.php') ? unlink('./token.php') : die('Failed to get accesstoken. Maybe refresh_token expired.');/*refreshtoken过期*/
+			return getAccessToken($update);
 	    }
 	}else{
 		require './token.php';
