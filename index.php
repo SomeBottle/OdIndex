@@ -29,7 +29,7 @@ $config=array(
     'thumbnail'=>true,
 	'preview'=>true,
 	'previewsuffix'=>['ogg','mp3','wav','m4a','mp4','webm','jpg','jpeg','png','gif','webp'],/*可预览的类型*/
-    'useProxy'=>true
+    'useProxy'=>false
 );
 /*Initialization*/
 /*smartCache*/
