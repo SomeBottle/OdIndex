@@ -1,7 +1,7 @@
 <?php
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 set_time_limit(0);
-$allowtags = array('1drv', 'onedrive', 'sharepoint', 'bottle.moe');
+$allowtags = array('1drv', 'onedrive', 'sharepoint');
 $streamtype = array('mp4', 'mp3', 'm4a');
 $rq = explode('?', $_SERVER["REQUEST_URI"]) [1];
 $parsed = parse_url($rq);
