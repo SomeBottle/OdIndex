@@ -6,7 +6,7 @@ Onedrive index transplanted from Heymind.
 > 原Heymind的Cloudflare Workers版OnedriveIndex使用**MIT协议**.  
 
 ## 前言  
-这只是通过调用api实现的onedrive文件列表程序，并不提供任何账号相关的内容。如果有条件，可以花钱支持一下<del>巨硬</del>微软。   
+这只是通过调用api实现的onedrive文件列表程序，并不提供任何账号相关的内容。如果有条件，请花钱支持一下<del>巨硬</del>微软。   
 
 ## Features & Drawbacks  
 * 转发下载（要过服务器流量[建议是国外服务器]，但能快很多）   
