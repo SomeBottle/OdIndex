@@ -69,6 +69,8 @@ footer a {
 .readme {
 	margin-top: 3rem;
 	font-size: 0.875rem;
+	padding: 0 1em;
+        color: #585858;
 }
 
 input {
