@@ -105,6 +105,9 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 	    }
 	}
 }
+function encodeurl($u){/*处理URL转义，保留斜杠*/
+	return str_ireplace('%2F','/',urlencode($u));
+}
 function parsepath($u){/*得出处理后的路径*/
 	global $config;
 	$up=parse_url($u)['path'];
@@ -170,7 +173,7 @@ function getParam($url,$param){/*获得url中的参数*/
 }
 function wrapPath($p){/*包装请求url*/
 	global $config;
-	$wrapped=$config['base'].$p;
+	$wrapped=encodeurl($config['base']).$p;
 	return ($wrapped=='/'||$wrapped=='') ? '' : ':'.$wrapped;
 }
 function handleRequest($url,$returnurl=false){
@@ -188,7 +191,7 @@ function handleRequest($url,$returnurl=false){
 		$preview=empty($prev) ? false : $prev;
 	}
 	if($thumbnail){/*如果是请求缩略图*/
-		$rq=$config['api_url'].'/me/drive/root:'.$config['base'].$path.':/thumbnails';
+		$rq=$config['api_url'].'/me/drive/root:'.encodeurl($config['base']).$path.':/thumbnails';
 		$resp=request($rq,'','GET',array(
 		   'Content-type: application/x-www-form-urlencoded',
 		   'Authorization: bearer '.$accessToken
