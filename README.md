@@ -90,6 +90,15 @@ Onedrive index transplanted from Heymind.
 
 * rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
 
+## 世纪互联（测试）  
+
+编辑头部config中**api_url**和**oauth_url**内容为：  
+
+```php
+"api_url"=> "https://microsoftgraph.chinacloudapi.cn/v1.0", 
+"oauth_url"=>"https://login.partner.microsoftonline.cn/common/oauth2/v2.0", 
+```
+
 ## Smart Cache  
 ```php
 "cache"=>array(
