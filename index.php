@@ -9,9 +9,11 @@ set_time_limit(60);
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 date_default_timezone_set("Asia/Shanghai");
 $config=array(
-    "refresh_token"=>"",
-    "client_id"=>"",
-    "client_secret"=> "",
+    "refresh_token"=>"", 
+    "client_id"=>"", 
+    "client_secret"=> "", 
+	"api_url"=> "https://graph.microsoft.com/v1.0", 
+	"oauth_url"=>"https://login.microsoftonline.com/common/oauth2/v2.0", 
     "redirect_uri"=> "https://heymind.github.io/tools/microsoft-graph-api-auth", 
     'base'=>"/",
 	'rewrite'=>false,
@@ -124,7 +126,7 @@ function getRefreshToken(){/*从token文件中或本脚本中取refreshtoken*/
 function getAccessToken($update=false){/*获得AccessToken*/
 	global $config;
 	if($update||!file_exists('./token.php')){
-	    $resp=request('https://login.microsoftonline.com/common/oauth2/v2.0/token',array(
+	    $resp=request($config['oauth_url'].'/token',array(
 	        'client_id'=>$config['client_id'],
 		    'redirect_uri'=>$config['redirect_uri'],
 		    'client_secret'=>$config['client_secret'],
@@ -186,7 +188,7 @@ function handleRequest($url,$returnurl=false){
 		$preview=empty($prev) ? false : $prev;
 	}
 	if($thumbnail){/*如果是请求缩略图*/
-		$rq='https://graph.microsoft.com/v1.0/me/drive/root:'.$config['base'].$path.':/thumbnails';
+		$rq=$config['api_url'].'/me/drive/root:'.$config['base'].$path.':/thumbnails';
 		$resp=request($rq,'','GET',array(
 		   'Content-type: application/x-www-form-urlencoded',
 		   'Authorization: bearer '.$accessToken
@@ -196,7 +198,7 @@ function handleRequest($url,$returnurl=false){
 		if($rurl){return handleFile($rurl,true);}else{return false;}/*强制不用代理*/
 	}
 	/*Normally request*/
-	$rq='https://graph.microsoft.com/v1.0/me/drive/root'.wrapPath($path).'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
+	$rq=$config['api_url'].'/me/drive/root'.wrapPath($path).'?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
 	$cache=cacheControl('read',$path);/*请求的内容是否被缓存*/
 	empty($cache[0]) ?: $queueid=queueChecker('add');/*如果有缓存也要加入队列计算*/
 	$resp=(ifCacheStart()&&!empty($cache[0])) ? $cache[0] : request($rq,'','GET',array(
