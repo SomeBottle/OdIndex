@@ -134,5 +134,8 @@ SmartQueue会在游客对文件造成大量请求时防止并发情况出现，�
 
 * 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换refresh_token，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的refreshtoken**即可.  
 
+## Reference  
+* https://docs.microsoft.com/zh-cn/graph/api/resources/onedrive?view=graph-rest-1.0  
+
 ------------------
 ### MIT LICENSE. 
