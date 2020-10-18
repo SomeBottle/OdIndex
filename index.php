@@ -31,12 +31,13 @@ $config=array(
     'thumbnail'=>true,
 	'preview'=>true,
 	'previewsuffix'=>['ogg','mp3','wav','m4a','mp4','webm','jpg','jpeg','png','gif','webp'],/*可预览的类型*/
-    'useProxy'=>false
+    'useProxy'=>false,
+	'proxyPath'=>false /*代理程序url，false则用本目录下的*/
 );
 /*Initialization*/
 /*smartCache*/
-if(!is_dir('./cache')) mkdir('./cache');
-$conf=array(/*Initialize conf*/
+if(!is_dir('./cache')) mkdir('./cache');/*如果没有cache目录就创建cache目录*/
+$conf=array(/*Initialize conf初始化缓存配置记录文件*/
 	'requests'=>0,
     'lastcount'=>time(),
 	'periods'=>array(),
@@ -52,13 +53,13 @@ $queue=array(
 if(!file_exists('./queue.php')) file_put_contents('./queue.php','<?php $ct='.var_export($queue,true).';?>');
 /*InitializationFinished*/
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
-    $str=join(' ',$a);
+    $str=join(' ',$a);/*将数组并入字串符，直接判断字串符里面是否有对应值*/
 	if(stripos($str,strval($v))!==false){
 		return true;
 	}
 	return false;
 }
-function modifyarr($arr,$search,$v){/*搜素并编辑数组*/
+function modifyarr($arr,$search,$v){/*搜素含有对应值的键并通过键编辑数组*/
 	foreach($arr as $k=>$val){
 		if(stripos($val,strval($search))!==false){
 			$arr[$k]=$v;
@@ -78,7 +79,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
     );
 	smartCache();/*智能缓存*/
 	$queueid=queueChecker('add');/*增加请求到队列*/
-	if($headerget){
+	if($headerget){/*仅请求头部模式*/
 	    stream_context_set_default($opts);
 		$hd=@get_headers($u,1);
 		queueChecker('del',true,$queueid);/*请求完毕，移除队列*/
@@ -88,7 +89,7 @@ function request($u,$q,$method='POST',$head=array('Content-type:application/x-ww
 		    return request($u,$q,$method,$head,$headerget,true);
 		}
 		return $hd;
-	}else{
+	}else{/*正常请求模式*/
         $ct = stream_context_create($opts);
         $result = @file_get_contents($u, false, $ct);
 		queueChecker('del',true,$queueid);/*请求完毕，移除队列*/
@@ -344,7 +345,7 @@ function renderHTML($body){
 function handleFile($url,$forceorigin=false){/*forceorigin为true时强制不用代理，这里用于缩略图*/
 	global $config;
 	if($config['useProxy']&&!$forceorigin){
-		$url=$config['sitepath'].'/odproxy.php?'.urlencode(substr($url,6));
+		$url=$config['proxyPath'] ? $config['proxyPath'] : $config['sitepath'].'/odproxy.php?'.urlencode(substr($url,6));
 		header('Location: '.$url);
 	}else{
 	    header('Location: '.substr($url,6));

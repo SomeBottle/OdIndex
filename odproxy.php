@@ -1,14 +1,15 @@
 <?php
+/*OdProxy 1.1 SomeBottle 20201018*/
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 set_time_limit(0);
 $allowtags = array('1drv', 'onedrive', 'sharepoint');
-$streamtype = array('mp4', 'mp3', 'm4a');
+$streamtype = array('mp4', 'mp3', 'm4a', 'mpg', 'mpeg', 'wav', 'ogg', 'webm');
 $rq = explode('?', $_SERVER["REQUEST_URI"]) [1];
+$rq = urldecode($rq);
 $parsed = parse_url($rq);
 if (!isset($parsed['scheme'])) {
     $rq = 'https:' . $rq;
 }
-$rq=urldecode($rq);
 function typetrans($arr) {
     if (is_array($arr)) {
         $t = '';
@@ -40,7 +41,6 @@ function ex($arr, $v) { /*判断是否在数组里有匹配的*/
     return $rt;
 }
 if (!empty($rq) && ex($allowtags, $rq)) {
-    $st = fopen($rq, 'r');
     $hd = get_headers($rq, 1);
     $bytes = $hd['Content-Length'];
     $type = $hd['Content-Type'];
@@ -52,30 +52,37 @@ if (!empty($rq) && ex($allowtags, $rq)) {
             $type = 'application/octet-stream';
         }
         if (ex($streamtype, typetrans($type))) { /*流媒体*/
-            /*$contenttype = ex($streamtype, $type);
-            header("Content-type: " . $contenttype);
+            $contenttype = ex($streamtype, $type);
+            header('Content-Type: ' . $contenttype);
             header("Accept-Ranges: bytes");
             if (isset($_SERVER['HTTP_RANGE'])) {
-                header("HTTP/1.1 206 Partial Content");
                 list($name, $range) = explode("=", $_SERVER['HTTP_RANGE']);
                 list($begin, $end) = explode("-", $range);
-                if ($end == 0) {
-                    $end = $bytes - 1;
-                }
+                $firstget = false;
             } else {
+                $firstget = true; /*是否第一次加range头*/
                 $begin = 0;
                 $end = $bytes - 1;
             }
-            header("Content-Length: " . ($end - $begin + 1));
-            header("Content-Disposition: " . $dispostion);
-            header("Content-Range: bytes " . $begin . "-" . $end . "/" . $bytes);
-            fseek($st, $begin);
-            while (!feof($fp)) {
-                $p = min(1048576, $end - $begin + 1);
-                $begin+= $p;
-                echo fread($st, $p);
-            }*/
-        }
+            $opts = array('http' => array('method' => 'GET', 'header' => array('Range: bytes=' . $begin . '-' . $end), 'timeout' => 15 * 60), 'ssl' => array('verify_peer' => false, 'verify_peer_name' => false));
+            $ct = stream_context_create($opts);
+            $st = fopen($rq, 'r', false, $ct);
+            $rthd = $http_response_header; /*return header*/
+            foreach ($rthd as $v) {
+                header($v); /*把返回头原样输出*/
+            }
+            if ($firstget) header('HTTP/1.1 200 OK'); /*下载文件的时候必须要返回头200 OK才行*/
+            @ob_start();
+            while (!feof($st)) { /*输出流媒体*/
+                $output = fread($st, 524288);
+                echo $output;
+                ob_flush();
+                echo ob_get_clean();
+                flush();
+            }
+            @ob_end_flush();
+        } else {
+            $st = fopen($rq, 'r');
             header('Content-Type: ' . $type);
             header('Content-Disposition: ' . $dispostion);
             header('Content-Transfer-Encoding: binary');
@@ -91,13 +98,13 @@ if (!empty($rq) && ex($allowtags, $rq)) {
                 echo ob_get_clean();
                 flush();
             }
-            fclose($st);
             @ob_end_flush();
+        }
         fclose($st);
     } else {
-        echo 'Bad request:1';
+        echo 'Bad request:illegal file';
     }
 } else {
-    echo 'Bad request:2';
+    echo 'Bad request:empty';
 }
 ?>
