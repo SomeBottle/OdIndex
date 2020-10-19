@@ -64,6 +64,7 @@ if (!empty($rq) && ex($allowtags, $rq)) {
                 $begin = 0;
                 $end = $bytes - 1;
             }
+            /*多亏微软接受Range头部：https://docs.microsoft.com/zh-cn/graph/api/driveitem-get-content?view=graph-rest-1.0&tabs=http#partial-range-downloads  */
             $opts = array('http' => array('method' => 'GET', 'header' => array('Range: bytes=' . $begin . '-' . $end), 'timeout' => 15 * 60), 'ssl' => array('verify_peer' => false, 'verify_peer_name' => false));
             $ct = stream_context_create($opts);
             $st = fopen($rq, 'r', false, $ct);
