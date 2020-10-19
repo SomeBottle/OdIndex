@@ -345,7 +345,7 @@ function renderHTML($body){
 function handleFile($url,$forceorigin=false){/*forceorigin为true时强制不用代理，这里用于缩略图*/
 	global $config;
 	if($config['useProxy']&&!$forceorigin){
-		$url=$config['proxyPath'] ? $config['proxyPath'] : $config['sitepath'].'/odproxy.php?'.urlencode(substr($url,6));
+		$url=($config['proxyPath'] ? $config['proxyPath'] : $config['sitepath'].'/odproxy.php').'?'.urlencode(substr($url,6));
 		header('Location: '.$url);
 	}else{
 	    header('Location: '.substr($url,6));
