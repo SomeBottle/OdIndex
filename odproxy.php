@@ -1,5 +1,6 @@
 <?php
 /*OdProxy 1.1 SomeBottle 20201018*/
+header('Access-Control-Allow-Origin: *');
 error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 set_time_limit(0);
 $allowtags = array('1drv', 'onedrive', 'sharepoint');
