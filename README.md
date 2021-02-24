@@ -27,8 +27,7 @@ Onedrive index transplanted from Heymind.
 ## Deployment  
 1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , preview.html**丢进去  
 
-2. 按照<a href='https://github.com/SomeBottle/OdIndex/blob/master/heymind/heymind.md' target='_blank'>Heymind</a>的方式获取refresh_token  
-**PS:Heymind的工具目前只测试了个人版，Business版请看一下<a href='https://github.com/heymind/OneDrive-Index-Cloudflare-Worker/issues' target='_blank'>issue</a>**  
+2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index#deployment' target='_blank'>Heymind</a>的方式获取refresh_token   
 
 3. 在index.php替换相关参数  
 
