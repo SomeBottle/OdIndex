@@ -52,6 +52,7 @@ $queue=array(
 );
 if(!file_exists('./queue.php')) file_put_contents('./queue.php','<?php $ct='.var_export($queue,true).';?>');
 /*InitializationFinished*/
+if(!getConfig('./cache.php')) unlink('./cache.php');
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
     $str=join(' ',$a);/*将数组并入字串符，直接判断字串符里面是否有对应值*/
 	if(stripos($str,strval($v))!==false){
