@@ -67,6 +67,7 @@ Onedrive index transplanted from Heymind.
 ```php
 'sitepath'=>'',  
 'base'=>'/Share',
+'datapath'=>'data',
 'rewrite'=>false,
 ...
 'useProxy'=>true,
@@ -91,6 +92,8 @@ Onedrive index transplanted from Heymind.
 * 如果odproxy.php和index.php不是相同目录下的，需要配置**proxyPath**.例如https://xxx/odproxy.php .   
 
 * rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
+
+* datapath配置项指的是数据的储存目录，默认配置成data，OdIndex的部分数据就会储存在data目录下  
 
 ## 世纪互联（测试）  
 

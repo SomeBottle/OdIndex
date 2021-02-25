@@ -15,7 +15,8 @@ $config=array(
     "api_url"=> "https://graph.microsoft.com/v1.0", 
     "oauth_url"=>"https://login.microsoftonline.com/common/oauth2/v2.0", 
     "redirect_uri"=> "http://localhost", 
-    'base'=>"/",
+    'base'=>'/',
+	'datapath'=>'data',
 	'rewrite'=>false,
 	'sitepath'=>'',
     "cache"=>array(
@@ -35,24 +36,37 @@ $config=array(
 	'proxyPath'=>false /*代理程序url，false则用本目录下的*/
 );
 /*Initialization*/
+function p($p){/*转换为绝对路径*/
+	return __DIR__ .'/'.$p;
+}
+function writeConfig($file,$arr){/*写入配置*/
+	global $config;
+	if(is_array($arr)) file_put_contents(p($config['datapath'].'/'.$file),json_encode($arr,true));
+}
+function getConfig($file){/*获得配置*/
+    global $config;
+	$path=p($config['datapath'].'/'.$file);
+	if(!file_exists($path)) return false;/*配置文件不存在直接返回false*/
+	return json_decode(file_get_contents($path),true);
+}
 /*smartCache*/
-if(!is_dir('./cache')) mkdir('./cache');/*如果没有cache目录就创建cache目录*/
-$conf=array(/*Initialize conf初始化缓存配置记录文件*/
+if(!is_dir(p($config['datapath']))) mkdir(p($config['datapath']));
+if(!is_dir(p($config['datapath'].'/cache'))) mkdir(p($config['datapath'].'/cache'));/*如果没有cache目录就创建cache目录*/
+$cacheInitialization=array(/*Initialize conf初始化缓存配置记录文件*/
 	'requests'=>0,
     'lastcount'=>time(),
 	'periods'=>array(),
 	'cachestart'=>false
 );
-if(!file_exists('./cache.php')) file_put_contents('./cache.php','<?php $ct='.var_export($conf,true).';?>');
+if(!getConfig('cache.json')) writeConfig('cache.json',$cacheInitialization);
 /*Queue*/
-$queue=array(
+$queueInitialization=array(
     'performing'=>'',/*正在执行的请求id(无实际用途，仅作标记*/
 	'requesting'=>0,/*在队列中的任务数*/
 	'start'=>false
 );
-if(!file_exists('./queue.php')) file_put_contents('./queue.php','<?php $ct='.var_export($queue,true).';?>');
+if(!getConfig('queue.json')) writeConfig('queue.json',$queueInitialization);
 /*InitializationFinished*/
-if(!getConfig('./cache.php')) unlink('./cache.php');
 function valueinarr($v,$a){/*判断数组中是否有一个值*/
     $str=join(' ',$a);/*将数组并入字串符，直接判断字串符里面是否有对应值*/
 	if(stripos($str,strval($v))!==false){
@@ -121,8 +135,8 @@ function parsepath($u){/*得出处理后的路径*/
 }
 function getRefreshToken(){/*从token文件中或本脚本中取refreshtoken*/
     global $config;
-	if(file_exists('./token.php')){
-		require './token.php';
+	if(file_exists(p('token.php'))){
+		require p('token.php');
 		return isset($refresh) ? $refresh : $config['refresh_token'];
 	}else{
 		return $config['refresh_token'];
@@ -130,7 +144,7 @@ function getRefreshToken(){/*从token文件中或本脚本中取refreshtoken*/
 }
 function getAccessToken($update=false){/*获得AccessToken*/
 	global $config;
-	if($update||!file_exists('./token.php')){
+	if($update||!file_exists(p('token.php'))){
 	    $resp=request($config['oauth_url'].'/token',array(
 	        'client_id'=>$config['client_id'],
 		    'redirect_uri'=>$config['redirect_uri'],
@@ -140,14 +154,14 @@ function getAccessToken($update=false){/*获得AccessToken*/
 	    ));
 	    $data=json_decode($resp,true);
 	    if(isset($data['access_token'])){/*存入到token文件*/
-		    file_put_contents('./token.php','<?php $token="'.$data['access_token'].'";$refresh="'.$data['refresh_token'].'";?>');
+		    file_put_contents(p('token.php'),'<?php $token="'.$data['access_token'].'";$refresh="'.$data['refresh_token'].'";?>');
 		    return $data['access_token'];
 	    }else{
-		    file_exists('./token.php') ? unlink('./token.php') : die('Failed to get accesstoken. Maybe refresh_token expired.');/*refreshtoken过期*/
+		    file_exists(p('token.php')) ? unlink(p('token.php')) : die('Failed to get accesstoken. Maybe refresh_token expired.');/*refreshtoken过期*/
 			return getAccessToken($update);
 	    }
 	}else{
-		require './token.php';
+		require p('token.php');
 		return $token;
 	}
 }
@@ -189,7 +203,7 @@ function handleRequest($url,$returnurl=false){
 		$thumbnail=empty($thumb) ? false : $thumb;/*判断请求的是不是缩略图*/
 	}
 	if($config['preview']){
-		$prev=getParam($url,'p');/*获得缩略图尺寸*/
+		$prev=getParam($url,'p');/*获得preview请求*/
 		$preview=empty($prev) ? false : $prev;
 	}
 	if($thumbnail){/*如果是请求缩略图*/
@@ -356,7 +370,7 @@ function handlePreview($url,$suffix){/*预览渲染器(文件直链，后缀)*/
     global $config;
 	$suffix=strtolower($suffix);
 	if(in_array($suffix,$config['previewsuffix'])){
-		$template=file_get_contents('./preview.html');
+		$template=file_get_contents(p('preview.html'));
 		$template=str_ireplace('{{url}}',$url,$template);
 		$template=str_ireplace('{{suffix}}',$suffix,$template);
 		return $template;
@@ -364,100 +378,98 @@ function handlePreview($url,$suffix){/*预览渲染器(文件直链，后缀)*/
 	   return handleFile($url);/*文件格式不支持预览，直接传递给文件下载*/
 	}
 }
-function cacheControl($mode,$path,$arr=false){/*缓存控制*/
+function cacheControl($mode,$path,$requestArr=false){/*缓存控制*/
     global $config;
-	$cf=getConfig('./cache.php');
+	$cacheConf=getConfig('cache.json');
 	$rt=true;
-	$starttime=$cf['cachestart'];
+	$starttime=$cacheConf['cachestart'];
 	if($starttime&&(time()-$starttime)>=$config['cache']['expire']){/*超出缓存时间*/
-		$cf['cachestart']=false;
+		$cacheConf['cachestart']=false;
 		cacheClear();
 		$rt=false;
 	}else if(ifCacheStart()){/*缓存模式开启*/
-		$file='./cache/'.md5($path).'.php';
+		$file='cache/'.md5($path).'.json';
 		if($mode=='write'){/*路径存在，写入缓存*/
-			file_put_contents($file,'<?php $ct='.var_export($arr,true).';?>');
-		}else if($mode=='read'&&file_exists($file)){/*路径存在，读缓存*/
-			$rt=getConfig($file);
+		    writeConfig($file,$requestArr);
+		}else if($mode=='read'){/*路径存在，读缓存*/
+			$rt=getConfig($file);/*缓存不存在会返回false*/
 		}else{/*缓存不存在*/
 			$rt=false;
 		}
 	}else{
 		$rt=false;
 	}
-	file_put_contents('./cache.php','<?php $ct='.var_export($cf,true).';?>');
+	writeConfig('cache.json',$cacheConf);
 	return $rt;
 }
 function cacheClear(){/*缓存清除*/
-	$cfile=scandir('./cache');
+    global $config;
+	$cfile=scandir(p($config['datapath'].'/cache'));
 	foreach($cfile as $v){
-		if($v!=='.'&&$v!=='..') unlink('./cache/'.$v);
+		if($v!=='.'&&$v!=='..') unlink(p($config['datapath'].'/cache/'.$v));
 	}
 }
 function ifCacheStart(){/*缓存是否开启了*/
     global $config;
-	$arr=getConfig('./cache.php');
-	return ($arr['cachestart']>0&&$config['cache']['smart']);
-}
-function getConfig($file){
-	require $file;
-	return $ct;
+	$cacheStatus=getConfig('cache.json');
+	return ($cacheStatus['cachestart']>0&&$config['cache']['smart']);
 }
 function smartCache(){/*处理缓存(还包括队列)*/
     global $config;
 	if(!$config['cache']['smart']) return false;/*未开启缓存直接返回*/
-	$arr=getConfig('./cache.php');
-	$queueconf=getConfig('./queue.php');
-	$lag=time()-$arr['lastcount'];
+	$cacheNow=getConfig('cache.json');
+	$queueconf=getConfig('queue.json');
+	$lag=time()-$cacheNow['lastcount'];
 	if($lag >= 30){
-		$velo=round($arr['requests']/$lag,2);/*获得速度,至少统计30秒*/
-		$arr['lastcount']=time();
-		array_push($arr['periods'],$velo);
-	    if(count($arr['periods'])>10) array_shift($arr['periods']);
-		$arr['requests']=0;
+		$velo=round($cacheNow['requests']/$lag,2);/*获得速度,至少统计30秒*/
+		$cacheNow['lastcount']=time();
+		array_push($cacheNow['periods'],$velo);
+	    if(count($cacheNow['periods'])>10) array_shift($cacheNow['periods']);
+		$cacheNow['requests']=0;
 	}else{
-		$arr['requests']+=1;
+		$cacheNow['requests']+=1;
 		$velo=false;
 	}
-	$average=@array_sum($arr['periods'])/count($arr['periods']);
-	if(!$arr['cachestart']&&($velo&&$velo>=0.9||$average>0.5)) $arr['cachestart']=time();/*开启智能缓存*/
+	$periodsnum=count($cacheNow['periods']);
+	$average=empty($periodsnum) ? 0 : @array_sum($cacheNow['periods'])/count($cacheNow['periods']);
+	if(!$cacheNow['cachestart']&&($velo&&$velo>=0.9||$average>0.5)) $cacheNow['cachestart']=time();/*开启智能缓存*/
 	if(!$queueconf['start']&&($velo&&$velo>=1.5||$average>1.2)) $queueconf['start']=time();/*开启队列*/
-	file_put_contents('./cache.php','<?php $ct='.var_export($arr,true).';?>');/*rate limit(concurrent)*/
-	file_put_contents('./queue.php','<?php $ct='.var_export($queueconf,true).';?>');/*储存配置*/
+	writeConfig('cache.json',$cacheNow);
+	writeConfig('queue.json',$queueconf);
 }
 function queueChecker($statu,$waiting=false,$id=false){/*处理队列*/
 	global $config;
 	$returnid=md5(time());
-	$arr=getConfig('./queue.php');/*拿到队列的记录文件*/
-	if(!$config['queue']['start']||!$arr['start']) return false;/*未开启队列直接返回*/
-	$lag=isset($arr['start']) ? time()-intval($arr['start']) : 0 ;/*计算自开始队列之后过去多久了*/
+	$queueConf=getConfig('queue.json');/*拿到队列的记录文件*/
+	if(!$config['queue']['start']||!$queueConf['start']) return false;/*未开启队列直接返回*/
+	$lag=isset($queueConf['start']) ? time()-intval($queueConf['start']) : 0 ;/*计算自开始队列之后过去多久了*/
 	usleep(500000);/*进来先等0.5秒*/
-	if(intval($arr['requesting'])>=$config['queue']['maxnum']&&!$waiting&&$arr['performing']!==$id){/*请求的量过大*/
+	if(intval($queueConf['requesting'])>=$config['queue']['maxnum']&&!$waiting&&$queueConf['performing']!==$id){/*请求的量过大*/
 		header('Location: '.$config['servicebusy']);/*返回服务繁忙的图片*/
 		exit();
 	}
-	while(!empty($arr['performing'])){/*有请求正在执行，阻塞*/
-	    $arr['requesting']=!$waiting ? intval($arr['requesting'])+1 : $arr['requesting'];/*增加请求*/
+	while(!empty($queueConf['performing'])){/*有请求正在执行，阻塞*/
+	    $queueConf['requesting']=!$waiting ? intval($queueConf['requesting'])+1 : $queueConf['requesting'];/*增加请求*/
 		usleep(500000);/*等0.5s*/
-		if($arr['performing']==$id) break;/*如果是正在执行的请求，不阻塞*/
+		if($queueConf['performing']==$id) break;/*如果是正在执行的请求，不阻塞*/
 		return queueChecker($statu,true,$id);/*waiting标记为true，不会被当成新请求返回服务繁忙*/
 	}
 	switch($statu){
 		case "add":/*请求添加到队列*/
-		  $arr['performing']=$returnid;
+		  $queueConf['performing']=$returnid;
 		  break;
 		case "del":
 		  $returnid=$id;
-		  $arr['performing']='';
-		  $arr['requesting']>0 ? $arr['requesting']-=1 : $arr['requesting']=0;/*请求执行完了*/
+		  $queueConf['performing']='';
+		  $queueConf['requesting']>0 ? $queueConf['requesting']-=1 : $queueConf['requesting']=0;/*请求执行完了*/
 		  break;
 	}
 	if($lag>=$config['queue']['lastfor']){/*超过了持续时间，关闭队列*/
-		$arr['start']=false;
-	    $arr['performing']='';
-		$arr['requesting']=0;
+		$queueConf['start']=false;
+	    $queueConf['performing']='';
+		$queueConf['requesting']=0;
 	}
-	file_put_contents('./queue.php','<?php $ct='.var_export($arr,true).';?>');/*储存配置*/
+	writeConfig('queue.json',$queueConf);/*储存配置*/
 	return $returnid;/*把执行的id传回去*/
 }
 
