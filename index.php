@@ -341,7 +341,7 @@ function renderHTML($body){
       <meta http-equiv="x-ua-compatible" content="ie=edge, chrome=1" />
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
       <title>Bottle Od</title>
-      <link href=\'https://fonts.loli.net/icon?family=Material+Icons\' rel=\'stylesheet\'>
+      <link href=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.6.2/assets/woff.css\' rel=\'stylesheet\'>
       <link href=\'https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex/assets/material.css\' rel=\'stylesheet\'>
       <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism-solarizedlight.css">
 	  <script>var readmefile="'.processhref('readme.md').'";</script>
