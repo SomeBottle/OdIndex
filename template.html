@@ -1,0 +1,200 @@
+{{Body}}
+<head>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <link href="https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.7.1/assets/style.css" rel="stylesheet">
+    <link href='https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.6.2/assets/woff.css' rel='stylesheet'>
+    <link href='https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <title>OdIndex - /{[Path]}</title>
+</head>
+
+<body>
+    <nav>
+        <div class='headt'>📁 OdIndex</div>
+    </nav>
+    <div class='container'>
+        <div class='pathshow'><a href='{[HomePath]}' target='_self'>🥔</a> > / {[PathItems]}</div>
+        <div class='items'>
+            <div style='min-width:600px'>{[Items]}</div>
+        </div>
+        <div class='readme markdown-body' id='readme'></div>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'></script>
+<script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
+<script>
+    var readmefile = "{[ReadmeFile]}";
+    async function renderReadme() {
+        const resp = await fetch(readmefile)
+        if (!resp.ok) return
+        document.querySelector("#readme").innerHTML = window.marked(await resp.text());
+        Prism.highlightAll()
+    }
+
+
+    function humanFileSize(bytes, si) {
+        bytes = parseInt(bytes, 10)
+        var thresh = si ? 1000 : 1024;
+        if (Math.abs(bytes) < thresh) {
+            return bytes + ' B';
+        }
+        var units = si ?
+            ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] :
+            ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        var u = -1;
+        do {
+            bytes /= thresh;
+            ++u;
+        } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+        return bytes.toFixed(1) + ' ' + units[u];
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+
+        document.querySelectorAll("a.item").forEach(function(i) {
+            i.insertAdjacentHTML('beforeend',
+                '<div style="flex-grow:1"></div>' +
+                ((i.hasAttribute("size")&&Number(i.getAttribute("size"))>0) ? '<span class="size">' + humanFileSize(i.getAttribute("size"), true) + '</span>' : '')
+            )
+        })
+
+    });
+
+    renderReadme().catch(console.error)
+</script>
+{{BodyEnd}} 
+{{PathSingle}}
+<a href='{[FolderLink]}'>{[FolderName]}</a> 
+{{PathSingleEnd}} 
+{{ItemSingle}}
+<a href="{[ItemLink]}" class="item" size="{[ItemSize]}"><i class="material-icons">{[MimeIcon]}</i>{[ItemName]}</a> 
+{{ItemSingleEnd}}
+{{PreviewBody}}
+<head>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <link href="https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.7.1/assets/style.css" rel="stylesheet">
+    <link href='https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <title>OdIndex Preview</title>
+</head>
+
+<body>
+    <nav>
+        <div class='headt'>📁 OdIndex</div>
+    </nav>
+    <div class='container'>
+        <div class='pathshow'><a href='{[HomePath]}' target='_self'>🥔</a> > / {[PathItems]} {[FileName]}</div>
+        {[PreviewContent]}
+        <div class='down'>
+            <input type='button' class='downbtn' value='Download' onclick='down()'></input><input type='text' class='downurl' value='{[FileRawUrl]}' disabled></input>
+        </div>
+        <script>
+            function down() {
+                window.open('{[FileRawUrl]}', '_self');
+            }
+
+            function jumpreview() {
+                window.open('{[PreviewUrl]}', '_blank');
+            }
+        </script>
+    </div>
+</body>
+{{PreviewBodyEnd}}
+{{ImgPreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <img style='max-width:100%' src='{[FileRawUrl]}'></img>
+    </div>
+</div>
+{{ImgPreviewEnd}}
+{{AudioPreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <audio style='width:80%;margin:10px 0;' src="{[FileRawUrl]}" controls="controls"></audio>
+    </div>
+</div>
+{{AudioPreviewEnd}}
+{{VideoPreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <video style='max-width:100%' src='{[FileRawUrl]}' controls="controls"></video>
+    </div>
+</div>
+{{VideoPreviewEnd}}
+{{TxtPreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <div class='previewtext markdown-body'>{[FileContent]}</div>
+    </div>
+</div>
+{{TxtPreviewEnd}}
+{{MDPreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <div class='previewtext markdown-body' id='md'>{[FileContent]}</div>
+    </div>
+</div>
+<script src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'></script>
+<script>
+    document.getElementById('md').innerHTML=marked(document.getElementById('md').innerHTML);
+</script>
+{{MDPreviewEnd}}
+{{CodePreview}}
+<div class='previewitems'>
+    <div style='min-width:300px'>
+        <div class='previewtext markdown-body' id='codes'>
+            <pre><code class="language-{[PrismTag]}">{[FileContent]}</code></pre>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script>
+    Prism.highlightAllUnder(document.getElementById('codes'));
+</script>
+{{CodePreviewEnd}}
+{{OfficePreview}}
+<div class='previewitems'>
+    <div style='min-width:300px;padding:10px 0;'>
+        <h2 style='margin-top:0;'>此预览需要前往Office</h2>
+        <input type='button' style='padding:10px 10px;' class='downbtn' value='点击跳转预览' onclick='jumpreview()'>
+    </div>
+</div>
+{{OfficePreviewEnd}}
+{{PasswordPage}}
+<head>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <link href="https://cdn.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.7.1/assets/style.css" rel="stylesheet">
+    <link href='https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <title>OdIndex - /{[Path]}</title>
+</head>
+
+<body>
+    <nav>
+        <div class='headt'>📁 OdIndex</div>
+    </nav>
+    <div class='container'>
+        <div class='pathshow'><a href='{[HomePath]}' target='_self'>🥔</a> > / {[PathItems]}</div>
+        <div class='passworditem'>
+            <div style='min-width:300px'>
+                <h2>输入密码以继续</h2>
+                <div class='passwordform'>
+                    <form action="#" method="post" style="display: flex;flex: 1;">
+                        <input class='passwordinput' type="password" name="password" placeholder="password"></input><input type="hidden" name="requestfolder" value="{[FolderMD5]}"/><input type='submit' class='submitbtn' value='Submit'></input>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+{{PasswordPageEnd}}
