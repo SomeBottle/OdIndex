@@ -1,0 +1,132 @@
+body {
+    margin: 0 auto;
+}
+
+nav {
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 10px #cfcfcf;
+    min-height: 2em;
+    padding: 0.8em 0;
+}
+
+.headt {
+    font-size: 1.7em;
+    font-weight: bold;
+}
+
+.container {
+    max-width: 800px;
+    width: calc(100% - 40px);
+    margin: 0 auto;
+}
+
+.pathshow {
+    margin: 20px 0;
+    color: #494949;
+}
+
+.pathshow a {
+    color: #494949;
+    text-decoration: none;
+    transition: 0.5s ease;
+}
+
+.pathshow a:hover {
+    color: #a0a0a0;
+}
+
+.items,
+.previewitems,
+.passworditem {
+    overflow-x: auto;
+    display: flex;
+    flex-flow: column nowrap;
+    background: white;
+    box-shadow: 0 10px 40px -10px rgba(65, 65, 65, 0.2);
+    border-radius: .3em;
+}
+
+a.item {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #383838;
+    padding: 0.8rem 1rem;
+    transition: .5s hover linear;
+}
+
+a.item i {
+    margin-right: 0.5rem;
+}
+
+a.item:hover {
+    background: #ffe7d1;
+}
+
+.readme {
+    margin: 2em 0;
+}
+
+footer {
+    width: 100%;
+    left: 0;
+    bottom: 0;
+    text-align: center;
+    margin: 10px 0;
+}
+
+footer p {
+    font-size: small;
+    padding: 2em 0;
+    color: rgb(94, 94, 94);
+}
+
+.previewitems,
+.passworditem {
+    text-align: center;
+}
+
+.down,
+.passwordform {
+    margin: 15px 20px;
+    max-width: 100%;
+    display: flex;
+}
+
+.downbtn,
+.submitbtn {
+    border: none;
+    background-color: #363636;
+    color: rgb(252, 252, 252);
+    padding: 10px 5px;
+    border-radius: .3em;
+    max-width: 30%;
+    flex: 1;
+    cursor: pointer;
+    transition: 0.5s ease;
+}
+
+input[type='button']:hover {
+    background-color: #727272;
+}
+
+.downurl {
+    flex: 1;
+    margin-left: 10px;
+    border-radius: .3em;
+    border-width: 0 0 1px 0;
+}
+
+.passwordinput {
+    flex: 1;
+    border-radius: .3em;
+    margin-right: 10px;
+    border-width: 0 0 1px 0;
+}
+
+.previewtext {
+    background-color: #eeeeee;
+    text-align: left;
+    padding: 20px 20px;
+}
