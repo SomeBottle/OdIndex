@@ -21,7 +21,8 @@ $config = array(
 	'sitepath' => '',
 	"cache" => array(
 		'smart' => true,
-		'expire' => 1800 /*In seconds*/
+		'expire' => 1800, /*In seconds*/
+		'force' => false /*是否强制开启缓存*/
 	),
 	'queue' => array(
 		'start' => true,/*防并发请求队列*/
@@ -569,6 +570,9 @@ function cacheControl($mode, $path, $requestArr = false)
 	$cacheConf = getConfig('cache.json');
 	$rt = true;
 	$starttime = $cacheConf['cachestart'];
+	if ($config['cache']['force'] && !$cacheConf['cachestart']) {/*如果强制开启了缓存*/
+		$cacheConf['cachestart'] = time();
+	}
 	if ($starttime && ((time() - $starttime) >= $config['cache']['expire'])) {/*超出缓存时间*/
 		$cacheConf['cachestart'] = false;
 		cacheClear();
