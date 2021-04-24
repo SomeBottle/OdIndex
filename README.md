@@ -125,7 +125,8 @@ $config = array(
 	'sitepath' => '', /*见下方解释*/
 	"cache" => array(//见SmartCache配置  
 		'smart' => true,
-		'expire' => 1800 /*In seconds*/
+		'expire' => 1800, /*In seconds*/
+		'force' => false /*是否强制开启缓存*/
 	),
 	'queue' => array(//见SmartQueue配置
 		'start' => true,/*防并发请求队列*/
@@ -237,7 +238,8 @@ $config = array(
 ```php
 "cache"=>array(
     'smart'=>true,
-    'expire'=>1200 /*In seconds*/
+    'expire'=>1200, /*In seconds*/
+    'force' => false /*是否强制开启缓存*/
 ),
 ```
 
@@ -245,6 +247,7 @@ SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配
 
 * smart 若为true则开启smartCache  
 * expire 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
+* 当**force**设为true时开启强制缓存，此时用户访问的页面都会被缓存，**经过expire时间**后缓存会自动清除  
 
 ## Smart Queue  
 ```php
