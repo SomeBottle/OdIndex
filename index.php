@@ -99,7 +99,7 @@ if (!getConfig('pwdcache.json')) writeConfig('pwdcache.json', $pwdUpdaterInitial
 /*InitializationFinished*/
 function valueinarr($v, $a)
 {/*判断数组中是否有一个值*/
-	$str = join(' ', $a);/*将数组并入字串符，直接判断字串符里面是否有对应值*/
+	$str = is_array($a) ? join(' ', $a) : false;/*将数组并入字串符，直接判断字串符里面是否有对应值*/
 	if (stripos($str, strval($v)) !== false) {
 		return true;
 	}
