@@ -1,5 +1,5 @@
 # OdIndex
-Onedrive index transplanted from Heymind.  
+SomeBottle's Onedrive Folder Index transplanted from Heymind.  
 
 ![Show](https://ae02.alicdn.com/kf/H1d8707f64dd44392ab9555961f083b5dE.png)  
 
