@@ -22,7 +22,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 * 支持缩略图获取  
 * 支持密码保护目录**以及目录下面的文件**  
 * **没有**文件上传功能  
-* 支持的格式预览：```ogg```,```mp3```,```wav```,```m4a```,```mp4```,```webm```,```jpg```,```jpeg```,```png```,```gif```,```webp```,```md```,```markdown```,```txt```,```docx```,```pptx```,```xlsx```,```js```,```html```,```json```,```css```  
+* 支持的格式预览：```ogg```,```mp3```,```wav```,```m4a```,```mp4```,```webm```,```jpg```,```jpeg```,```png```,```gif```,```webp```,```md```,```markdown```,```txt```,```docx```,```pptx```,```xlsx```,```doc```,```ppt```,```xls```,```js```,```html```,```json```,```css```  
 * 支持无目录模式  
 * 支持以纯json格式返回  
 
@@ -39,7 +39,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 
 2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index#deployment' target='_blank'>Beetcb</a>的方式获取refresh_token   
 
-3. 在index.php**设置**相关参数  
+3. 在index.php[**设置**](#Config)相关参数  
 
 4. 设置伪静态:（可选）  
   
@@ -64,7 +64,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 在你需要展示说明文件的目录下放入readme.md文件，会自动进行解析并展示在该目录的文件列表下.  
   
 ## Password  
-在**列表的根目录**下创建.password文件，如图：  
+在[**你配置的地方**](#pwdCfgPath)下创建**密码配置文件**，如图：  
 
 ![ExamplePwd](https://ae02.alicdn.com/kf/H721fdd70e4cf482b8271ebe56739e1b88.png)  
 
@@ -72,7 +72,8 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 
 注意的是目录路径末尾**不需要```/```**。
 
-比如我要保护```/Video/*```下的内容，密码md5是e10adc3949ba59abbe56e057f20f883e，则规则写为```/Video e10adc3949ba59abbe56e057f20f883e```  
+比如我要保护```/Video/*```下的内容，密码md5是e10adc3949ba59abbe56e057f20f883e，则规则写为  
+```/Video e10adc3949ba59abbe56e057f20f883e```  
 
 PS：这个规则可以保护目录及**目录下的所有子目录和文件**，利用了目录对比。因为获取密码有了额外的资源消耗，你可以在[配置](#config)里关掉密码保护功能。
 
@@ -119,30 +120,31 @@ $config = array(
 	"api_url" => "https://graph.microsoft.com/v1.0",
 	"oauth_url" => "https://login.microsoftonline.com/common/oauth2/v2.0",
 	"redirect_uri" => "http://localhost",
-	'base' => '/', /*详见下方解释*/
-	'datapath' => 'data', /*储存OdIndex Json数据的目录*/
-	'rewrite' => false, /*伪静态是否开启，看下方解释*/
-	'sitepath' => '', /*见下方解释*/
-	"cache" => array(//见SmartCache配置  
+	'base' => '/',
+	'datapath' => 'data',
+	'rewrite' => false,
+	'sitepath' => '',
+	"cache" => array(
 		'smart' => true,
 		'expire' => 1800, /*In seconds*/
 		'force' => false /*是否强制开启缓存*/
 	),
-	'queue' => array(//见SmartQueue配置
+	'queue' => array(
 		'start' => true,/*防并发请求队列*/
 		'maxnum' => 15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
 		'lastfor' => 2700 /*In seconds*/
 	),
 	'servicebusy' => 'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
-	'thumbnail' => true, //是否开启缩略图  
-	'preview' => true, //是否开启预览  
+	'thumbnail' => true,
+	'preview' => true,
 	'maxpreviewsize' => 314572, /*最大支持预览的文件大小(in bytes)*/
-	'previewsuffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'js', 'html', 'json', 'css'],/*可预览的类型,只可减少不可增多*/
-	'useProxy' => false, //见下方解释
+	'previewsuffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
+	'useProxy' => false,
 	'proxyPath' => false, /*代理程序url，false则用本目录下的*/
 	'noIndex' => false, /*关闭列表*/
 	'noIndexPrint' => 'Static powered by OdIndex', /*关闭列表访问列表时返回什么*/
 	'listAsJson' => false, /*改为返回json*/
+	'pwdCfgPath' => '.password', /*密码配置文件路径*/
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
 	'pwdConfigUpdateInterval' => 1200 /*密码配置文件本地缓存时间(in seconds)*/
 );
@@ -221,6 +223,9 @@ $config = array(
 	"fileurl": "...."
   }
   ```
+
+* <a id="pwdCfgPath">pwdCfgPath</a>是你的密码的配置文件路径，默认是.password，也就是列表根目录的.password文件.如果你想配置成在列表Test目录内的passwordconfig文件可以这样写：  
+  ```pwdCfgPath=>'Test/passwordconfig',```  
 
 * pwdProtect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
 

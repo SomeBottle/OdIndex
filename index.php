@@ -33,12 +33,13 @@ $config = array(
 	'thumbnail' => true,
 	'preview' => true,
 	'maxpreviewsize' => 314572, /*最大支持预览的文件大小(in bytes)*/
-	'previewsuffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
+	'previewsuffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
 	'useProxy' => false,
 	'proxyPath' => false, /*代理程序url，false则用本目录下的*/
 	'noIndex' => false, /*关闭列表*/
 	'noIndexPrint' => 'Static powered by OdIndex', /*关闭列表访问列表时返回什么*/
 	'listAsJson' => false, /*改为返回json*/
+	'pwdCfgPath' => '.password', /*密码配置文件路径*/
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
 	'pwdConfigUpdateInterval' => 1200 /*密码配置文件本地缓存时间(in seconds)*/
 );
@@ -274,8 +275,8 @@ function handleRequest($url, $returnurl = false)
 	if ($resp) {
 		$data = json_decode($resp, true);
 		if (isset($data['file'])) {/*返回的是文件*/
-			if ($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得.password文件*/
-			if ($data['name'] == '.password') die('Access denied');/*阻止密码被获取到*/
+			if ($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得文件内容*/
+			if ($data['name'] == $config['pwdCfgPath']) die('Access denied');/*阻止密码被获取到*/
 			if (ifCacheStart() && !$cache) cacheControl('write', $path, array($resp));/*只有下载链接储存缓存*/
 			/*构建文件下载链接缓存*/
 			if ($preview == 't') {/*预览模式*/
@@ -361,7 +362,7 @@ function pwdConfigReader()
 	global $config;
 	$pwdCacheUpdate = getConfig('pwdcache.json');/*获取密码配置更新情况*/
 	if (time() - $pwdCacheUpdate['lastupdate'] >= $config['pwdConfigUpdateInterval']) {/*该更新密码配置缓存了*/
-		$requesturl = 'http://request.yes/.password';/*密码配置文件在根目录*/
+		$requesturl = 'http://request.yes/' . $config['pwdCfgPath'];/*密码配置文件在根目录*/
 		$downurl = handleRequest($requesturl, true);/*获得密码文件下载链接*/
 		$remoteConfig = @request($downurl, '', 'GET', array());/*请求到文件*/
 		file_put_contents(p('pwdcache.php'), '<?php $pwdcfgcache="' . base64_encode(trim($remoteConfig)) . '";?>');
@@ -429,7 +430,7 @@ function renderFolderIndex($items, $isIndex)
 				$jsonarr['folders'][] = ['name' => $v['name'], 'size' => $v['size'], 'link' => processhref($v['name'] . '/')];
 				$itemrender .= item("folder", $v['name'], $v['size'], processhref($v['name'] . '/'));
 			} else if (isset($v['file'])) {/*是文件*/
-				if ($v['name'] == '.password') continue;/*不显示.password文件*/
+				if ($v['name'] == $config['pwdCfgPath']) continue;/*不显示password配置文件*/
 				$hf = $config['preview'] ? $v['name'] . '?p=t' : $v['name'];/*如果开了预览，所有文件都加上预览请求*/
 				$jsonarr['files'][] = ['mimeType' => $v['file']['mimeType'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processhref($hf)];
 				$itemrender .= item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'], processhref($hf));
@@ -511,6 +512,9 @@ function handlePreview($url, $suffix, $filename, $size)
 			case 'docx':
 			case 'pptx':
 			case 'xlsx':
+			case 'doc':
+			case 'ppt':
+			case 'xls':
 				$previewcontent = getTp('officepreview');
 				$template = rpTp('previewurl', 'https://view.officeapps.live.com/op/view.aspx?src=' . urlencode($url), $template);
 				break;
