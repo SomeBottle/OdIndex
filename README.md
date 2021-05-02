@@ -33,6 +33,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 - [x] 文件简单预览  
 - [x] 文件复杂预览  
 - [x] 模板系统  
+- [ ] 翻页支持  
 
 ## Deployment  
 1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , template.html**丢进去  
