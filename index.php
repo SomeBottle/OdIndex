@@ -41,9 +41,16 @@ $config = array(
 	'listAsJson' => false, /*改为返回json*/
 	'pwdCfgPath' => '.password', /*密码配置文件路径*/
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
-	'pwdConfigUpdateInterval' => 1200 /*密码配置文件本地缓存时间(in seconds)*/
+	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
+	'pagination' => true, /*是否开启分页*/
+	'itemsPerPage' => 10 /*每页的项目数量，用于分页*/
 );
 /*Initialization*/
+$pagAttr = [/*这是个全局属性，告诉大家现在在哪个页面，前后有没有页面*/
+	'current' => 1,
+	'prevExist' => false,
+	'nextExist' => false
+];
 function p($p)
 {/*转换为绝对路径*/
 	return __DIR__ . '/' . $p;
@@ -165,7 +172,10 @@ function parsepath($u)
 	$up = parse_url($u)['path'];
 	$rt = str_ireplace($config['sitepath'], '', $up);
 	if ($config['rewrite']) {
-		$rt = explode('&', $rt)[0];/*rewrite开启后服务器程序会自动把?转换为&*/
+		$rt = explode('/', $rt);
+		$ending = end($rt);
+		$rt[count($rt) - 1] = explode('&', $ending)[0];/*rewrite开启后服务器程序会自动把?转换为&*/
+		$rt = join('/', $rt);
 	}
 	return $rt;
 }
@@ -228,10 +238,40 @@ function getParam($url, $param)
 	}
 }
 function wrapPath($p)
-{/*包装请求url*/
+{/*目录包装请求url*/
 	global $config;
 	$wrapped = encodeurl($config['base']) . $p;
-	return ($wrapped == '/' || $wrapped == '') ? '' : ':' . $wrapped;
+	$wrapForFolder = substr($wrapped, -1) == '/' ? substr($wrapped, 0, strlen($wrapped) - 1) : $wrapped;/*请求目录内容的时候形如/test:/children,末尾是没有/的，需要去掉*/
+	return ($wrapped == '/' || $wrapped == '') ? '' : ':' . $wrapForFolder;
+}
+function pagRequest($prurl, $rq, $accessToken, $ifRequestFolder)
+{/*分页请求包装，算是一个Hook?*/
+	global $config, $pagAttr;
+	$nowPage = intval(getParam($prurl, 'o'));/*获得请求中的页码*/
+	$requestedPage = 1;
+	$totalPage = (empty($nowPage) || $nowPage < 0) ? 1 : $nowPage;/*如果没有页码默认是请求第一页*/
+	$pagAttr['current'] = $totalPage;/*更新当前页码*/
+	$resp = '';
+	$linkForRequest = $rq;
+	while ($requestedPage <= $totalPage) {
+		$resp = request($linkForRequest, '', 'GET', array(
+			'Content-type: application/x-www-form-urlencoded',
+			'Authorization: bearer ' . $accessToken
+		));
+		if (empty($resp) || !$config['pagination'] || !$ifRequestFolder) break;/*请求到的一页都没有内容/没有开启分页/请求的不是目录就直接返回了*/
+		$data = json_decode($resp, true);
+		if ($requestedPage > 1) $pagAttr['prevExist'] = true;/*有上一页*/
+		if (isset($data['@odata.nextLink'])) {
+			$linkForRequest = $data['@odata.nextLink'];/*下次请求的链接是这个*/
+			$pagAttr['nextExist'] = true;/*有下一页*/
+		} else {/*没有nextLink了，说明到头了，直接返回*/
+			$pagAttr['nextExist'] = false;
+			break;
+		}
+		$requestedPage += 1;
+	}
+	if ($ifRequestFolder) $GLOBALS['pagAttr'] = $pagAttr;/*更新分页属性*/
+	return $resp;
 }
 function handleRequest($url, $returnurl = false)
 {
@@ -239,6 +279,7 @@ function handleRequest($url, $returnurl = false)
 	$error = '';
 	$accessToken = getAccessToken();/*获得accesstoken*/
 	$path = parsepath($url);
+	$ifRequestFolder = substr($path, -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
 	$jsonarr = ['success' => false, 'msg' => ''];
 	$path == '/' ? $path = '' : $path;/*根目录特殊处理*/
 	if ($config['thumbnail']) {
@@ -250,7 +291,7 @@ function handleRequest($url, $returnurl = false)
 		$preview = empty($prev) ? false : $prev;
 	}
 	if ($thumbnail) {/*如果是请求缩略图*/
-		$rq = $config['api_url'] . '/me/drive/root:' . encodeurl($config['base']) . $path . ':/thumbnails';
+		$rq = $config['api_url'] . '/me/drive/root' . wrapPath($path) . ':/thumbnails';
 		$resp = request($rq, '', 'GET', array(
 			'Content-type: application/x-www-form-urlencoded',
 			'Authorization: bearer ' . $accessToken
@@ -258,19 +299,17 @@ function handleRequest($url, $returnurl = false)
 		$resp = json_decode($resp, true);
 		$rurl = $resp['value'][0][$thumbnail]['url'];
 		if ($rurl) {
-			return handleFile($rurl, true);
+			return handleFile($rurl, [], true);
 		} else {
 			return false;
 		}/*强制不用代理*/
 	}
 	/*Normally request*/
-	$rq = $config['api_url'] . '/me/drive/root' . wrapPath($path) . '?select=name,eTag,size,id,folder,file,%40microsoft.graph.downloadUrl&expand=children(select%3Dname,eTag,size,id,folder,file)';
+	$wrappedPath = wrapPath($path);
+	$rq = $config['api_url'] . '/me/drive/root' . $wrappedPath . ($ifRequestFolder ? ((empty($wrappedPath) ? '' : ':') . '/children' . ($config['pagination'] ? '?$top=' . $config['itemsPerPage'] : '')) : '?select=name,eTag,createdDateTime,lastModifiedDateTime,size,id,folder,file,%40microsoft.graph.downloadUrl');/*从内而外：第一层判断是否有分页，第二层判断是请求的目录还算文件，第三层包装请求*/
 	$cache = cacheControl('read', $path);/*请求的内容是否被缓存*/
 	empty($cache[0]) ?: $queueid = queueChecker('add');/*如果有缓存也要加入队列计算*/
-	$resp = (ifCacheStart() && !empty($cache[0])) ? $cache[0] : request($rq, '', 'GET', array(
-		'Content-type: application/x-www-form-urlencoded',
-		'Authorization: bearer ' . $accessToken
-	));
+	$resp = (ifCacheStart() && !empty($cache[0])) ? $cache[0] : pagRequest($url, $rq, $accessToken, $ifRequestFolder);
 	empty($cache[0]) ?: queueChecker('del', true, $queueid);/*如果有缓存也要移除队列计算*/
 	if ($resp) {
 		$data = json_decode($resp, true);
@@ -280,12 +319,12 @@ function handleRequest($url, $returnurl = false)
 			if (ifCacheStart() && !$cache) cacheControl('write', $path, array($resp));/*只有下载链接储存缓存*/
 			/*构建文件下载链接缓存*/
 			if ($preview == 't') {/*预览模式*/
-				return handlePreview($data["@microsoft.graph.downloadUrl"], suffix($data['name']), $data['name'], $data['size']);/*渲染预览*/
+				return handlePreview($data["@microsoft.graph.downloadUrl"], $data);/*渲染预览*/
 			} else {
-				handleFile($data["@microsoft.graph.downloadUrl"]);
+				handleFile($data["@microsoft.graph.downloadUrl"], $data);
 			}
-		} else if (isset($data['folder'])) {/*返回的是目录*/
-			$render = renderFolderIndex($data['children'], parsepath($url));/*渲染目录*/
+		} else if (isset($data['value'])) {/*返回的是目录*/
+			$render = renderFolderIndex($data['value'], parsepath($url));/*渲染目录*/
 			return $render;
 		} else {
 			$jsonarr['msg'] = 'Error response:' . var_export($resp, true);
@@ -296,11 +335,16 @@ function handleRequest($url, $returnurl = false)
 		return ($config['listAsJson'] ? json_encode($jsonarr, true) : '<!--NotFound:' . urldecode($path) . '-->');
 	}
 }
-function item($icon, $filename, $size = false, $href = false)
+function item($icon, $filename, $rawdata = false, $size = false, $href = false)
 {
 	$singleItem = getTp('itemsingle');/*获得单个项目列表的模板*/
 	$href = $href ?: $href = $filename;/*没有指定链接自动指定文件名*/
 	$size = $size ? $size : 0;/*在标签附上文件大小*/
+	if ($rawdata) {
+		$singleItem = rpTp('createddatetime', $rawdata['createdDateTime'], $singleItem);
+		$singleItem = rpTp('lastmodifieddatetime', $rawdata['lastModifiedDateTime'], $singleItem);
+		$singleItem = rpTp('mimetype', $rawdata['file']['mimeType'], $singleItem);
+	}
 	$singleItem = rpTp('itemlink', $href, $singleItem);
 	$singleItem = rpTp('itemsize', $size, $singleItem);
 	$singleItem = rpTp('mimeicon', $icon, $singleItem);
@@ -322,22 +366,40 @@ function mime2icon($t)
 function processhref($hf)
 {/*根据伪静态是否开启处理href*/
 	global $config, $pr;
-	if (!$config['rewrite']) return '?/' . $pr . $hf;/*没开伪静态，请求处理*/
+	if (!$config['rewrite']) {
+		$pr_parts = explode('?', $pr);
+		$pr = $pr_parts[0];/*未开启伪静态要净化一下pr*/
+		return '?/' . $pr . $hf;/*没开伪静态，请求处理*/
+	}
 	return $hf;
+}
+function nowPath()
+{/*获得当前所在路径*/
+	global $config, $pr;
+	if ($config['rewrite']) {
+		$pr_parts = explode('/', urldecode($pr));
+		if (stripos(end($pr_parts), '&') !== false) array_pop($pr_parts);
+		$pr = join('/', $pr_parts);
+	}
+	return $pr;
 }
 function trimall($str)
 {/*去除空格和换行*/
 	$arr = array(" ", "　", "\t", "\n", "\r");
 	return str_replace($arr, '', $str);
 }
-function pathitems($preview = false)
+function pathitems()
 {/*生成当前路径模板*/
 	global $config, $pr;
-	$folders = array_filter(explode('/', $pr));
-	if ($preview) array_pop($folders);
+	$folders = explode('/', $pr);
+	$lastValue = end($folders);/*观察数组最后一个值，也就是当前路径的末尾有没有请求符*/
+	if ($config['rewrite'] && stripos($lastValue, '&') !== false) {/*这个问题只会在开启了伪静态的情况下出现，当目录最后一节中为请求符的时候自动忽略*/
+		array_pop($folders);
+	}
+	$folders = array_filter($folders);/*上面一步处理完之后删除不显示的空节*/
 	$singlePath = getTp('pathsingle');
 	$allPath = '';
-	$currentPath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
+	$currentPath = $config['sitepath'] . ($config['rewrite'] ? '/' : '?/');/*兼容没有使用重定向的情况*/
 	foreach ($folders as $val) {
 		$currentPath .= $val . '/';
 		$single = rpTp('folderlink', $currentPath, $singlePath);
@@ -346,12 +408,12 @@ function pathitems($preview = false)
 	}
 	return $allPath;
 }
-function passwordform($fmd5, $notinlist = false)/*当notinlist为true时代表不是在列表里调用的passwordform*/
+function passwordform($fmd5)/*当notinlist为true时代表不是在列表里调用的passwordform*/
 {/*密码输入模板*/
 	global $pr, $config;
 	$passwordPage = getTp('passwordpage');
-	$content = rpTp('path', urldecode($pr), $passwordPage);
-	$content = rpTp('pathitems', pathitems($notinlist), $content);
+	$content = rpTp('path', nowPath(), $passwordPage);
+	$content = rpTp('pathitems', pathitems(), $content);
 	$content = rpTp('foldermd5', $fmd5, $content);
 	$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
 	$content = rpTp('homepath', $homePath, $content);
@@ -376,7 +438,7 @@ function pwdConfigReader()
 function pwdChallenge()
 {
 	global $pr, $config;
-	if (!$config['pwdProtect']) return true;/*没有开启密码保护一律通行*/
+	if (!$config['pwdProtect']) return [true];/*没有开启密码保护一律通行*/
 	$pwdcfg = pwdConfigReader();/*取得密码配置文件*/
 	@session_start();
 	if (!isset($_SESSION['passwd'])) $_SESSION['passwd'] = array();/*密码是否存在*/
@@ -385,6 +447,7 @@ function pwdChallenge()
 		$singleconfig = explode(' ', $line);
 		$targetFolder = $singleconfig[0];/*获得每行配置的目标目录*/
 		$targetPwd = trim($singleconfig[1]);/*获得每行目录对应的md5密码*/
+		if (empty($targetFolder)) continue;/*如果配置目录为空就跳过，防止匹配bug*/
 		if (stripos($currentPath, $targetFolder) === 0) {/*当前目录能匹配上目标目录，受密码保护*/
 			$foldermd5 = md5($targetFolder);/*得到目标foldermd5*/
 			if (!isset($_SESSION['passwd'][$foldermd5]) || $targetPwd !== $_SESSION['passwd'][$foldermd5]) {/*没有post密码或者密码错误*/
@@ -400,9 +463,9 @@ function pwdChallenge()
 }
 function renderFolderIndex($items, $isIndex)
 {/*渲染目录列表*/
-	global $config, $pr;
+	global $config, $pr, $pagAttr;
 	if ($config['noIndex']) return $config['noIndexPrint'];
-	$jsonarr = ['success' => true, 'currentPath' => $pr, 'folders' => [], 'files' => []];/*初始化Json*/
+	$jsonarr = ['success' => true, 'currentPath' => nowPath(), 'currentPage' => $pagAttr['current'], 'nextPageExist' => $pagAttr['nextExist'], 'prevPageExist' => $pagAttr['prevExist'], 'folders' => [], 'files' => []];/*初始化Json*/
 	$itemrender = '';/*文件列表渲染变量*/
 	$backhref = '..';
 	if (!$config['rewrite']) {/*回到上一目录*/
@@ -414,7 +477,7 @@ function renderFolderIndex($items, $isIndex)
 		}
 	}
 	if ($isIndex !== '/') {
-		$itemrender = item("folder", "..", false, $backhref);/*在根目录*/
+		$itemrender = item("folder", "..", false, false, $backhref);/*在根目录*/
 	}
 	$passwordPage = '';/*密码页面*/
 	$passwordChallenge = pwdChallenge();/*先校验当前目录有没有经过密码保护*/
@@ -427,13 +490,13 @@ function renderFolderIndex($items, $isIndex)
 	} else {
 		foreach ($items as $v) {
 			if (isset($v['folder'])) {/*是目录*/
-				$jsonarr['folders'][] = ['name' => $v['name'], 'size' => $v['size'], 'link' => processhref($v['name'] . '/')];
-				$itemrender .= item("folder", $v['name'], $v['size'], processhref($v['name'] . '/'));
+				$jsonarr['folders'][] = ['createdDateTime' => $v['createdDateTime'], 'lastModifiedDateTime' => $v['lastModifiedDateTime'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processhref($v['name'] . '/')];
+				$itemrender .= item("folder", $v['name'], $v, $v['size'], processhref($v['name'] . '/'));
 			} else if (isset($v['file'])) {/*是文件*/
 				if ($v['name'] == $config['pwdCfgPath']) continue;/*不显示password配置文件*/
 				$hf = $config['preview'] ? $v['name'] . '?p=t' : $v['name'];/*如果开了预览，所有文件都加上预览请求*/
-				$jsonarr['files'][] = ['mimeType' => $v['file']['mimeType'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processhref($hf)];
-				$itemrender .= item(mime2icon($v['file']['mimeType']), $v['name'], $v['size'], processhref($hf));
+				$jsonarr['files'][] = ['createdDateTime' => $v['createdDateTime'], 'lastModifiedDateTime' => $v['lastModifiedDateTime'], 'mimeType' => $v['file']['mimeType'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processhref($hf)];
+				$itemrender .= item(mime2icon($v['file']['mimeType']), $v['name'], $v, $v['size'], processhref($hf));
 			}
 		}
 	}
@@ -441,17 +504,31 @@ function renderFolderIndex($items, $isIndex)
 }
 function renderHTML($items)
 {
-	global $pr, $config;
+	global $pr, $config, $pagAttr;
 	$templateBody = getTp('body');
-	$construct = rpTp('path', urldecode($pr), $templateBody);
+	$templatePag = getTp('paginationsingle');
+	$templatePrev = getTp('paginationprev');
+	$templateNext = getTp('paginationnext');
+	$currentPage = $pagAttr['current'];
+	if (($pagAttr['prevExist'] || $pagAttr['nextExist']) && $config['pagination']) {/*有翻页存在*/
+		$templatePrev = rpTp('prevlink', processhref('?o=' . ($currentPage - 1)), $templatePrev);
+		$templateNext = rpTp('nextlink', processhref('?o=' . ($currentPage + 1)), $templateNext);
+		$templatePag = $pagAttr['prevExist'] ? rpTp('prev', $templatePrev, $templatePag) : rpTp('prev', '', $templatePag);
+		$templatePag = $pagAttr['nextExist'] ? rpTp('next', $templateNext, $templatePag) : rpTp('next', '', $templatePag);;
+		$templateBody = rpTp('pagination', $templatePag, $templateBody);/*展示翻页*/
+	} else {
+		$templateBody = rpTp('pagination', '', $templateBody);/*不展示翻页*/
+	}
+	$construct = rpTp('path', nowPath(), $templateBody);
 	$construct = rpTp('pathitems', pathitems(), $construct);
+	$construct = rpTp('currentpage', $currentPage, $construct);
 	$construct = rpTp('items', $items, $construct);
 	$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
 	$construct = rpTp('homepath', $homePath, $construct);
 	$construct = rpTp('readmefile', processhref('readme.md'), $construct);
 	return $construct;
 }
-function handleFile($url, $forceorigin = false)
+function handleFile($url, $rawdata, $forceorigin = false)
 {/*forceorigin为true时强制不用代理，这里用于缩略图*/
 	global $config;
 	$passwordPage = '';/*密码页面*/
@@ -468,7 +545,7 @@ function handleFile($url, $forceorigin = false)
 	}
 	$url = substr($url, 6);
 	$rdurl = ($config['useProxy'] && !$forceorigin) ? (($config['proxyPath'] ? $config['proxyPath'] : $config['sitepath'] . '/odproxy.php') . '?' . urlencode($url)) : $url;
-	$json = json_encode(['success' => true, 'fileurl' => $rdurl], true);/*初始化Json*/
+	$json = !$forceorigin ? json_encode(['success' => true, 'fileurl' => $rdurl, 'createdDateTime' => $rawdata['createdDateTime'], 'lastModifiedDateTime' => $rawdata['lastModifiedDateTime'], 'mimeType' => $rawdata['file']['mimeType']], true) : '[]';/*初始化Json*/
 	if ($config['listAsJson']) {
 		echo $json;
 	} else {
@@ -485,16 +562,22 @@ function previewcontent($url, $size)
 		return request($url, '', 'GET', array());
 	}
 }
-function handlePreview($url, $suffix, $filename, $size)
+function handlePreview($url, $data)
 {/*预览渲染器(文件直链，后缀)*/
 	global $config, $pr;
 	if ($config['noIndex']) return $config['noIndexPrint'];
+	$suffix = suffix($data['name']);
+	$filename = $data['name'];
+	$size = $data['size'];
+	$createdTime = $data['createdDateTime'];
+	$lastModifiedTime = $data['lastModifiedDateTime'];
+	$mimeType = $data['file']['mimeType'];
 	$passwordPage = '';/*密码页面*/
 	$passwordChallenge = pwdChallenge();/*先校验当前目录有没有经过密码保护*/
 	$passwordVerify = $passwordChallenge[0];/*目录是否被密码保护*/
 	if (!$passwordVerify) {/*未经过密码校验*/
 		$foldermd5 = $passwordChallenge[1];
-		$passwordPage = passwordform($foldermd5, true);
+		$passwordPage = passwordform($foldermd5);
 		$jsonarr['success'] = false;/*请求失败状态也失败*/
 		$jsonarr['msg'] = 'Password required,please post the form: requestfolder=' . $foldermd5 . '&password=<thepassword>';
 		$json = json_encode($jsonarr, true);
@@ -504,8 +587,8 @@ function handlePreview($url, $suffix, $filename, $size)
 	$jsonarr = ['success' => false, 'msg' => 'Preview not available under listAsJson Mode'];
 	if (in_array($suffix, $config['previewsuffix'])) {
 		$previewBody = getTp('previewbody');
-		$template = rpTp('path', urldecode($pr), $previewBody);
-		$template = rpTp('pathitems', pathitems(true), $template);
+		$template = rpTp('path', nowPath(), $previewBody);
+		$template = rpTp('pathitems', pathitems(), $template);
 		$template = rpTp('filename', $filename, $template);
 		$previewcontent = '';
 		switch ($suffix) {
@@ -563,9 +646,12 @@ function handlePreview($url, $suffix, $filename, $size)
 		$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
 		$template = rpTp('homepath', $homePath, $template);
 		$template = rpTp('filerawurl', $url, $template);
+		$template = rpTp('createddatetime', $createdTime, $template);
+		$template = rpTp('lastmodifieddatetime', $lastModifiedTime, $template);
+		$template = rpTp('mimetype', $mimeType, $template);
 		return $config['listAsJson'] ? json_encode($jsonarr, true) : $template;/*json返回模式下不支持预览*/
 	} else {
-		return handleFile($url);/*文件格式不支持预览，直接传递给文件下载*/
+		return handleFile($url, $data);/*文件格式不支持预览，直接传递给文件下载*/
 	}
 }
 function cacheControl($mode, $path, $requestArr = false)

@@ -108,7 +108,7 @@ footer p {
 }
 
 input[type='button']:hover {
-    background-color: #727272;
+    background-color: #adadad;
 }
 
 .downurl {
@@ -129,4 +129,27 @@ input[type='button']:hover {
     background-color: #eeeeee;
     text-align: left;
     padding: 20px 20px;
+}
+
+.pagination {
+    display:flex;
+    max-width:100%;
+}
+.prevpage,.nextpage {
+    border: none;
+    margin-top: 20px;
+    background-color: #fafafa;
+    color:rgb(3, 3, 3);
+    padding: 10px 5px;
+    border-radius: .3em;
+    flex: 1;
+    cursor: pointer;
+    transition: 0.5s ease;
+    box-shadow: 0 10px 40px -10px rgba(65, 65, 65, 0.2);
+}
+.prevpage{
+    margin-right:30%;
+}
+.nextpage{
+    margin-left:30%;
 }

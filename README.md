@@ -33,7 +33,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 - [x] 文件简单预览  
 - [x] 文件复杂预览  
 - [x] 模板系统  
-- [ ] 翻页支持  
+- [x] 翻页支持  
 
 ## Deployment  
 1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , template.html**丢进去  
@@ -84,6 +84,9 @@ PS：这个规则可以保护目录及**目录下的所有子目录和文件**�
     ```{{Body}}{{BodyEnd}}``` 之间是OdIndex主体模板  
     ```{{PathSingle}}{{PathSingleEnd}}``` 之间是目录定位链接单体模板  
     ```{{ItemSingle}}{{ItemSingleEnd}}``` 之间是单个列表中的项目的模板  
+    ```{{PaginationSingle}}{{PaginationSingleEnd}}``` 之间是列表中的翻页部分的模板  
+    ```{{PaginationPrev}}{{PaginationPrevEnd}}``` 之间是翻页部分后退按钮的模板   
+    ```{{PaginationNext}}{{PaginationNextEnd}}``` 之间是翻页部分前进按钮的模板 
     ```{{PreviewBody}}{{PreviewBodyEnd}}``` 之间是预览的主体模板  
     ```{{ImgPreview}}{{ImgPreviewEnd}}``` 之间是图片预览的内容模板  
     ```{{AudioPreview}}{{AudioPreviewEnd}}``` 之间是音频预览的内容模板  
@@ -99,11 +102,18 @@ PS：这个规则可以保护目录及**目录下的所有子目录和文件**�
     ```{[HomePath]}``` 是主页路径  
     ```{[PathItems]}``` 和前面的```{{PathSingle}}```相搭配，替换后是组装过后的目录定位整体  
     ```{[Items]}``` 和前面的```{{ItemSingle}}```相搭配，替换后是组装后的文件列表  
+    ```{[Pagination]}``` **仅在{{Body}}中有用**和前面的```{{PaginationSingle}}```相搭配，替换后是组装后的pagination翻页部分  
+    ```{[Prev]},{[Next]}``` **仅在{{PaginationSingle}}中有用** , 被替换为前进和后退按钮    
+    ```{[PrevLink]},{[NextLink]}``` **仅分别在{{PaginationPrev}}和{{PaginationNext}}中有用** , 被替换为前进和后退链接   
+    ```{[CurrentPage]}``` **仅在{{Body}}中有用** , 被替换为当前页码    
     ```{[ReadmeFile]}``` 是当前目录下的readme文件的直链  
     ```{[FolderLink]},{[FolderName]}``` **仅在{{PathSingle}}中有用** , 指定目录定位链接和目录名  
     ```{[ItemLink]},{[ItemSize]},{[MimeIcon]},{[ItemName]}``` **仅在{{ItemSingle}}中有用** , 指定单个文件的链接、大小(bytes)、Mime图标标识、名字  
     ```{[FileName]}``` **仅在{{PreviewBody}}中可用** , 替换为当前预览的文件名  
     ```{[PreviewContent]}```  **仅在{{PreviewBody}}中可用** , 替换为**对应的内容模板**  
+    ```{[CreatedDateTime]}``` **仅在{{PreviewBody}}和{{ItemSingle}}中可用** , 替换为**当前文件的创建日期时间**  
+    ```{[LastModifiedDateTime]}``` **仅在{{PreviewBody}}和{{ItemSingle}}中可用** , 替换为**当前文件的最后修改日期时间**  
+    ```{[MimeType]}``` **仅在{{PreviewBody}}和{{ItemSingle}}中可用** , 替换为**当前文件mime属性**  
     ```{[FileRawUrl]}``` **仅在预览相关模板中可用** , 替换为文件直链  
     ```{[PreviewUrl]}``` **仅在预览Office文档时可用** , 替换为在线预览链接  
     ```{[FileContent]}``` **仅在{{TxtPreview}},{{MDPreview}},{{CodePreview}}中有用** , 替换为文件原内容  
@@ -147,10 +157,12 @@ $config = array(
 	'listAsJson' => false, /*改为返回json*/
 	'pwdCfgPath' => '.password', /*密码配置文件路径*/
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
-	'pwdConfigUpdateInterval' => 1200 /*密码配置文件本地缓存时间(in seconds)*/
+	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
+	'pagination' => true, /*是否开启分页*/
+	'itemsPerPage' => 10 /*每页的项目数量，用于分页*/
 );
 ```
-* base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为 "**/**"  
+* base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为**留空**  
 
 * preview配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.previewsuffix是支持预览的文件格式，**不建议修改**.  
 
@@ -177,36 +189,39 @@ $config = array(
   **正常返回:**
   ```json
   {
-	"success": true,
-	"currentPath": "",
-	"folders": [{
-		"name": "\ud83d\ude04emoji",
-		"size": 236237,
-		"link": "\ud83d\ude04emoji\/"
-	}, {
-		"name": "Previews",
-		"size": 88567120,
-		"link": "Previews\/"
-	}, {
-		"name": "Protected",
-		"size": 7938,
-		"link": "Protected\/"
-	}, {
-		"name": "Videos",
-		"size": 325088195,
-		"link": "Videos\/"
-	}],
-	"files": [{
-		"mimeType": "image\/png",
-		"name": "Potato.png",
-		"size": 314,
-		"link": "Potato.png?p=t"
-	}, {
-		"mimeType": "application\/octet-stream",
-		"name": "readme.md",
-		"size": 69,
-		"link": "readme.md?p=t"
-	}]
+	  "success": true,
+	  "currentPath": "",
+	  "currentPage": 1,
+	  "nextPageExist": false,
+	  "prevPageExist": false,
+	  "folders": [{
+		  "createdDateTime": "2021-04-24T03:51:36.99Z",
+		  "lastModifiedDateTime": "2021-04-27T11:17:31.457Z",
+		  "name": "Previews",
+		  "size": 117218729,
+		  "link": "Previews\/"
+	  }, {
+		  "createdDateTime": "2021-04-24T03:51:37.967Z",
+		  "lastModifiedDateTime": "2021-04-24T03:53:43.597Z",
+		  "name": "Protected",
+		  "size": 197107,
+		  "link": "Protected\/"
+	  }],
+	  "files": [{
+		  "createdDateTime": "2021-04-24T03:51:45.093Z",
+		  "lastModifiedDateTime": "2021-04-24T03:51:45.85Z",
+		  "mimeType": "image\/png",
+		  "name": "Potato.png",
+		  "size": 314,
+		  "link": "Potato.png?p=t"
+	  }, {
+		  "createdDateTime": "2021-04-24T03:51:44.83Z",
+		  "lastModifiedDateTime": "2021-04-24T03:59:19.71Z",
+		  "mimeType": "application\/octet-stream",
+		  "name": "readme.md",
+		  "size": 141,
+		  "link": "readme.md?p=t"
+	  }]
   }
   ```
   **找不到文件/目录的返回：**  
@@ -220,8 +235,11 @@ $config = array(
   **访问文件时的返回：**  
   ```json
   {
-	"success": true,
-	"fileurl": "...."
+	  "success": true,
+	  "fileurl": "...",
+	  "createdDateTime": "2021-04-24T03:51:45.093Z",
+	  "lastModifiedDateTime": "2021-04-24T03:51:45.85Z",
+	  "mimeType": "image\/png"
   }
   ```
 
@@ -229,6 +247,8 @@ $config = array(
   ```pwdCfgPath=>'Test/passwordconfig',```  
 
 * pwdProtect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
+
+* pagination设置为true则**开启分页**，每页展示的项目数量由**itemsPerPage**决定  
 
 
 ## 世纪互联（测试）  
@@ -284,7 +304,9 @@ SmartQueue会在游客对文件造成大量请求时防止并发情况出现，�
 
 
 ## Reference  
-* https://docs.microsoft.com/zh-cn/graph/api/resources/onedrive?view=graph-rest-1.0  
+* https://docs.microsoft.com/zh-cn/graph/api/resources/driveitem?view=graph-rest-1.0 
+* https://docs.microsoft.com/zh-cn/graph/query-parameters  
+* https://docs.microsoft.com/zh-cn/graph/paging  
 
 ------------------
 ### UNDER MIT LICENSE. 
