@@ -43,7 +43,7 @@ $config = array(
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
 	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
 	'pagination' => true, /*是否开启分页*/
-	'itemsPerPage' => 10 /*每页的项目数量，用于分页*/
+	'itemsPerPage' => 50 /*每页的项目数量，用于分页*/
 );
 /*Initialization*/
 $pagAttr = [/*这是个全局属性，告诉大家现在在哪个页面，前后有没有页面*/
