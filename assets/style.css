@@ -132,24 +132,22 @@ input[type='button']:hover {
 }
 
 .pagination {
-    display:flex;
-    max-width:100%;
+    display: flex;
+    max-width: 100%;
+    justify-content: space-between;
 }
-.prevpage,.nextpage {
+
+.prevpage,
+.nextpage {
     border: none;
     margin-top: 20px;
     background-color: #fafafa;
-    color:rgb(3, 3, 3);
+    color: rgb(3, 3, 3);
     padding: 10px 5px;
     border-radius: .3em;
     flex: 1;
     cursor: pointer;
     transition: 0.5s ease;
     box-shadow: 0 10px 40px -10px rgba(65, 65, 65, 0.2);
-}
-.prevpage{
-    margin-right:30%;
-}
-.nextpage{
-    margin-left:30%;
+    max-width: 20%;
 }
