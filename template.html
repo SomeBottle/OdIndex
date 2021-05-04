@@ -109,10 +109,6 @@
         </div>
         <!--createdTime:{[CreatedDateTime]} modifiedTime:{[LastModifiedDateTime]} mimeType:{[MimeType]}-->
         <script>
-            function down() {
-                window.open('{[FileRawUrl]}', '_self');
-            }
-
             function jumpreview() {
                 window.open('{[PreviewUrl]}', '_blank');
             }
@@ -120,6 +116,9 @@
 	        dl.pop();
 	        dl=dl.join('?');
 	        document.getElementById('du').value=dl;
+			function down() {
+                window.open(dl, '_self');
+            }
         </script>
     </div>
 </body>
