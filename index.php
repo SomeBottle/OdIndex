@@ -43,7 +43,7 @@ $config = array(
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
 	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
 	'pagination' => true, /*是否开启分页*/
-	'itemsPerPage' => 50 /*每页的项目数量，用于分页*/
+	'itemsPerPage' => 20 /*每页的项目数量，用于分页(推荐设置为20-35)*/
 );
 /*Initialization*/
 $pagAttr = [/*这是个全局属性，告诉大家现在在哪个页面，前后有没有页面*/
@@ -244,42 +244,61 @@ function wrapPath($p)
 	$wrapForFolder = substr($wrapped, -1) == '/' ? substr($wrapped, 0, strlen($wrapped) - 1) : $wrapped;/*请求目录内容的时候形如/test:/children,末尾是没有/的，需要去掉*/
 	return ($wrapped == '/' || $wrapped == '') ? '' : ':' . $wrapForFolder;
 }
-function pagRequest($prurl, $rq, $accessToken, $ifRequestFolder)
+function pagRequest($prurl, $rq, $accessToken, $RequestFolder)
 {/*分页请求包装，算是一个Hook?*/
 	global $config, $pagAttr;
-	$nowPage = intval(getParam($prurl, 'o'));/*获得请求中的页码*/
-	$requestedPage = 1;
-	$totalPage = (empty($nowPage) || $nowPage < 0) ? 1 : $nowPage;/*如果没有页码默认是请求第一页*/
-	$pagAttr['current'] = $totalPage;/*更新当前页码*/
 	$resp = '';
-	$linkForRequest = $rq;
-	while ($requestedPage <= $totalPage) {
-		$resp = request($linkForRequest, '', 'GET', array(
+	if ($RequestFolder) {
+		$nowPage = intval(getParam($prurl, 'o'));/*获得请求中的页码*/
+		$chunkedPage = 1;/*本地分块页数*/
+		$chunkedResp = '';/*缓冲块中的Resp*/
+		$chunkSize = 1;/*缓冲块当前大小，满5块后清零，进行新请求*/
+		$totalPage = (empty($nowPage) || $nowPage < 0) ? 1 : $nowPage;/*如果没有页码默认是请求第一页*/
+		$pagAttr['current'] = $totalPage;/*更新当前页码*/
+		$chunkRequestSize = $config['itemsPerPage'] * 5;/*缓冲分块，在缓冲块内的分页将在本地完成*/
+		$rq = $rq . ($config['pagination'] ? '?$top=' . $chunkRequestSize : '');/*重构建请求url*/
+		$linkForRequest = $rq;
+		while ($chunkedPage <= $totalPage) {
+			$chunkedResp = $chunkSize == 1 ? request($linkForRequest, '', 'GET', array(
+				'Content-type: application/x-www-form-urlencoded',
+				'Authorization: bearer ' . $accessToken
+			)) : $chunkedResp;
+			if (empty($chunkedResp)) break;/*请求到的一页都没有内容就直接返回了*/
+			$data = json_decode($chunkedResp, true);
+			$chunkItemNum = count($data['value']);/*获得总项目数*/
+			$chunkSizePage = ceil($chunkItemNum / $config['itemsPerPage']);/*得出当前缓冲块有多少页，通常是我们分的四页，但是当翻到最后的时候往往可能没有四页*/
+			$theChunk = array_chunk($data['value'], $config['itemsPerPage'])[$chunkSize - 1];/*取出当前的一页*/
+			$data['value'] = $theChunk;
+			$resp = json_encode($data);/*导出分块数据*/
+			if ($chunkedPage > 1) $pagAttr['prevExist'] = true;/*有上一页*/
+			if (isset($data['@odata.nextLink'])) {
+				$linkForRequest = $data['@odata.nextLink'];/*下次请求的链接是这个*/
+				$pagAttr['nextExist'] = true;/*有下一页*/
+			} else if ($chunkSize < $chunkSizePage) {/*缓冲区没填满也有下一页*/
+				$pagAttr['nextExist'] = true;/*有下一页*/
+			} else {/*没有nextLink了(或者没有开启分页)，说明到头了，直接返回*/
+				$pagAttr['nextExist'] = false;
+				break;
+			}
+			$chunkedPage += 1;
+			$chunkSize = $chunkSize >= $chunkSizePage ? 1 : $chunkSize + 1;
+		}
+		$GLOBALS['pagAttr'] = $pagAttr;/*更新分页属性*/
+	} else {
+		$resp = request($rq, '', 'GET', array(
 			'Content-type: application/x-www-form-urlencoded',
 			'Authorization: bearer ' . $accessToken
 		));
-		if (empty($resp) || !$config['pagination'] || !$ifRequestFolder) break;/*请求到的一页都没有内容/没有开启分页/请求的不是目录就直接返回了*/
-		$data = json_decode($resp, true);
-		if ($requestedPage > 1) $pagAttr['prevExist'] = true;/*有上一页*/
-		if (isset($data['@odata.nextLink'])) {
-			$linkForRequest = $data['@odata.nextLink'];/*下次请求的链接是这个*/
-			$pagAttr['nextExist'] = true;/*有下一页*/
-		} else {/*没有nextLink了，说明到头了，直接返回*/
-			$pagAttr['nextExist'] = false;
-			break;
-		}
-		$requestedPage += 1;
 	}
-	if ($ifRequestFolder) $GLOBALS['pagAttr'] = $pagAttr;/*更新分页属性*/
 	return $resp;
 }
-function handleRequest($url, $returnurl = false)
+function handleRequest($url, $returnurl = false, $requestForFile = false)
 {
-	global $config;
+	global $config, $pr, $ifRequestFolder;
+	$RequestFolder = $requestForFile ? false : $ifRequestFolder;
 	$error = '';
 	$accessToken = getAccessToken();/*获得accesstoken*/
 	$path = parsepath($url);
-	$ifRequestFolder = substr($path, -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
 	$jsonarr = ['success' => false, 'msg' => ''];
 	$path == '/' ? $path = '' : $path;/*根目录特殊处理*/
 	if ($config['thumbnail']) {
@@ -306,17 +325,17 @@ function handleRequest($url, $returnurl = false)
 	}
 	/*Normally request*/
 	$wrappedPath = wrapPath($path);
-	$rq = $config['api_url'] . '/me/drive/root' . $wrappedPath . ($ifRequestFolder ? ((empty($wrappedPath) ? '' : ':') . '/children' . ($config['pagination'] ? '?$top=' . $config['itemsPerPage'] : '')) : '?select=name,eTag,createdDateTime,lastModifiedDateTime,size,id,folder,file,%40microsoft.graph.downloadUrl');/*从内而外：第一层判断是否有分页，第二层判断是请求的目录还算文件，第三层包装请求*/
-	$cache = cacheControl('read', $path);/*请求的内容是否被缓存*/
+	$rq = $config['api_url'] . '/me/drive/root' . $wrappedPath . ($RequestFolder ? ((empty($wrappedPath) ? '' : ':') . '/children') : '?select=name,eTag,createdDateTime,lastModifiedDateTime,size,id,folder,file,%40microsoft.graph.downloadUrl');/*从内而外：第一层判断是否有分页，第二层判断是请求的目录还算文件，第三层包装请求*/
+	$cache = cacheControl('read', '/' . $pr);/*请求的内容是否被缓存*/
 	empty($cache[0]) ?: $queueid = queueChecker('add');/*如果有缓存也要加入队列计算*/
-	$resp = (ifCacheStart() && !empty($cache[0])) ? $cache[0] : pagRequest($url, $rq, $accessToken, $ifRequestFolder);
+	$resp = (ifCacheStart() && !empty($cache[0])) ? $cache[0] : pagRequest($url, $rq, $accessToken, $RequestFolder);
 	empty($cache[0]) ?: queueChecker('del', true, $queueid);/*如果有缓存也要移除队列计算*/
-	if ($resp) {
+	if (!empty($resp)) {
 		$data = json_decode($resp, true);
 		if (isset($data['file'])) {/*返回的是文件*/
 			if ($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得文件内容*/
 			if ($data['name'] == $config['pwdCfgPath']) die('Access denied');/*阻止密码被获取到*/
-			if (ifCacheStart() && !$cache) cacheControl('write', $path, array($resp));/*只有下载链接储存缓存*/
+			if (ifCacheStart() && !$cache) cacheControl('write', '/' . $pr, array($resp));/*只有下载链接储存缓存*/
 			/*构建文件下载链接缓存*/
 			if ($preview == 't') {/*预览模式*/
 				return handlePreview($data["@microsoft.graph.downloadUrl"], $data);/*渲染预览*/
@@ -332,7 +351,8 @@ function handleRequest($url, $returnurl = false)
 		}
 	} else {
 		$jsonarr['msg'] = 'Not found: ' . urldecode($path);
-		return ($config['listAsJson'] ? json_encode($jsonarr, true) : '<!--NotFound:' . urldecode($path) . '-->');
+		echo ($config['listAsJson'] ? json_encode($jsonarr, true) : '<!--NotFound:' . urldecode($path) . '-->');
+		return '';/*当文件或目录不存在的时候返回空，以免缓存记录*/
 	}
 }
 function item($icon, $filename, $rawdata = false, $size = false, $href = false)
@@ -425,8 +445,8 @@ function pwdConfigReader()
 	$pwdCacheUpdate = getConfig('pwdcache.json');/*获取密码配置更新情况*/
 	if (time() - $pwdCacheUpdate['lastupdate'] >= $config['pwdConfigUpdateInterval']) {/*该更新密码配置缓存了*/
 		$requesturl = 'http://request.yes/' . $config['pwdCfgPath'];/*密码配置文件在根目录*/
-		$downurl = handleRequest($requesturl, true);/*获得密码文件下载链接*/
-		$remoteConfig = @request($downurl, '', 'GET', array());/*请求到文件*/
+		$downurl = handleRequest($requesturl, true, true);/*获得密码文件下载链接*/
+		$remoteConfig = empty($downurl) ? '' : @request($downurl, '', 'GET', array());/*请求到文件*/
 		file_put_contents(p('pwdcache.php'), '<?php $pwdcfgcache="' . base64_encode(trim($remoteConfig)) . '";?>');
 		$pwdCacheUpdate['lastupdate'] = time();
 		writeConfig('pwdcache.json', $pwdCacheUpdate);
@@ -670,7 +690,7 @@ function cacheControl($mode, $path, $requestArr = false)
 	} else if (ifCacheStart()) {/*缓存模式开启*/
 		$file = 'cache/' . md5($path) . '.json';
 		if ($mode == 'write') {/*路径存在，写入缓存*/
-			writeConfig($file, $requestArr);
+			if (!getConfig($file)) writeConfig($file, $requestArr);/*缓存不存在的情况下才写入*/
 		} else if ($mode == 'read') {/*路径存在，读缓存*/
 			$rt = getConfig($file);/*缓存不存在会返回false*/
 		} else {/*缓存不存在*/
@@ -774,15 +794,14 @@ $self = basename($_SERVER['PHP_SELF']);
 $pr = str_ireplace($self, '', $pr);
 $requesturl = 'http://request.yes/' . $pr;
 /*Cache Processor*/
-@ob_start();/*缓冲区打开*/
-$cache = cacheControl('read', $pr);
+$ifRequestFolder = substr(parsepath($requesturl), -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
+$cache = cacheControl('read', '/' . $pr);
 if (ifCacheStart() && !empty($cache[0]) && empty($passrq)) {
-	$output = $cache[0];
+	$output = $ifRequestFolder ? $cache[0] : handleRequest($requesturl);
 } else {
-	echo handleRequest($requesturl);
-	$output = ob_get_contents();
-	if (ifCacheStart()) cacheControl('write', $pr, array($output));
+	$cachepath = '/' . $pr;
+	$output = handleRequest($requesturl);
+	if (ifCacheStart() && pwdChallenge()) cacheControl('write', $cachepath, array($output));
 }
-@ob_end_clean();
 if ($config['listAsJson']) header('Content-type:text/json;charset=utf-8');/*如果以Json返回就设定头*/
 echo $output;

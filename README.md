@@ -159,7 +159,7 @@ $config = array(
 	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
 	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
 	'pagination' => true, /*是否开启分页*/
-	'itemsPerPage' => 50 /*每页的项目数量，用于分页*/
+	'itemsPerPage' => 20 /*每页的项目数量，用于分页,建议设置为20-35*/
 );
 ```
 * base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为**留空**  
@@ -172,7 +172,18 @@ $config = array(
     //末尾不要斜杠！  
   ```
 
-* **值得注意的是，rewrite=true时，sitepath要留空**   
+* **值得注意的是，rewrite=false时，sitepath最好留空，用不着**   
+
+* 当你开启了重定向并设置了sitepath，需要对应**修改重定向规则：**  
+  ```
+  #(比如sitepath设置为/test)  
+  rewrite ^/(.*)$ /?/$1 last;  
+
+  #改为
+
+  rewrite ^/test/(.*)$ /test/?/$1 last;
+
+  ```
 
 * useProxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
 
@@ -248,10 +259,10 @@ $config = array(
 
 * pwdProtect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
 
-* pagination设置为true则**开启分页**，每页展示的项目数量由**itemsPerPage**决定，因为微软api的缺陷，请尽量把**itemsPerPage**设置大一点，以避免大量请求资源消耗    
+* pagination设置为true则**开启分页**，每页展示的项目数量由**itemsPerPage**决定，因为微软api的缺陷，建议把**itemsPerPage**设置为**20-40**，太小了会增加请求负担，太大了会增加服务器处理负担      
 
 
-## 世纪互联（测试）  
+## 世纪互联  
 
 编辑头部config中**api_url**和**oauth_url**内容为：  
 
