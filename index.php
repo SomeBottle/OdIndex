@@ -702,9 +702,14 @@ function cacheControl($mode, $path, $requestArr = false)
 	writeConfig('cache.json', $cacheConf);
 	return $rt;
 }
-function cacheClear()
+function cacheClear($singlepath = false)
 {/*缓存清除*/
 	global $config;
+	if ($singlepath) {/*删除单个缓存*/
+		$file = md5($singlepath) . '.json';
+		unlink(p($config['datapath'] . '/cache/' . $file));
+		return true;
+	}
 	$cfile = scandir(p($config['datapath'] . '/cache'));
 	foreach ($cfile as $v) {
 		if ($v !== '.' && $v !== '..') unlink(p($config['datapath'] . '/cache/' . $v));
@@ -740,13 +745,26 @@ function smartCache()
 	writeConfig('cache.json', $cacheNow);
 	writeConfig('queue.json', $queueconf);
 }
+function queueTimecheck()
+{
+	global $config;
+	$queueConf = getConfig('queue.json');/*拿到队列的记录文件*/
+	if ($config['queue']['start'] && $queueConf['start']) {
+		$lag = isset($queueConf['start']) ? time() - intval($queueConf['start']) : 0;/*计算自开始队列之后过去多久了*/
+		if ($lag >= $config['queue']['lastfor']) {/*超过了持续时间，关闭队列*/
+			$queueConf['start'] = false;
+			$queueConf['performing'] = '';
+			$queueConf['requesting'] = 0;
+		}
+		writeConfig('queue.json', $queueConf);/*储存配置*/
+	}
+}
 function queueChecker($statu, $waiting = false, $id = false)
 {/*处理队列*/
 	global $config;
 	$returnid = md5(time());
 	$queueConf = getConfig('queue.json');/*拿到队列的记录文件*/
 	if (!$config['queue']['start'] || !$queueConf['start']) return false;/*未开启队列直接返回*/
-	$lag = isset($queueConf['start']) ? time() - intval($queueConf['start']) : 0;/*计算自开始队列之后过去多久了*/
 	usleep(500000);/*进来先等0.5秒*/
 	if (intval($queueConf['requesting']) >= $config['queue']['maxnum'] && !$waiting && $queueConf['performing'] !== $id) {/*请求的量过大*/
 		header('Location: ' . $config['servicebusy']);/*返回服务繁忙的图片*/
@@ -767,12 +785,10 @@ function queueChecker($statu, $waiting = false, $id = false)
 			$queueConf['performing'] = '';
 			$queueConf['requesting'] > 0 ? $queueConf['requesting'] -= 1 : $queueConf['requesting'] = 0;/*请求执行完了*/
 			break;
+		case 'check':
+			break;
 	}
-	if ($lag >= $config['queue']['lastfor']) {/*超过了持续时间，关闭队列*/
-		$queueConf['start'] = false;
-		$queueConf['performing'] = '';
-		$queueConf['requesting'] = 0;
-	}
+	queueTimecheck();/*检查是否超时*/
 	writeConfig('queue.json', $queueConf);/*储存配置*/
 	return $returnid;/*把执行的id传回去*/
 }
@@ -793,15 +809,18 @@ if (empty($pr)) {
 $self = basename($_SERVER['PHP_SELF']);
 $pr = str_ireplace($self, '', $pr);
 $requesturl = 'http://request.yes/' . $pr;
+queueTimecheck();/*检查是否超时*/
 /*Cache Processor*/
 $ifRequestFolder = substr(parsepath($requesturl), -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
-$cache = cacheControl('read', '/' . $pr);
+$cachepath = '/' . $pr;
+if (!pwdChallenge()[0]) cacheClear($cachepath);/*如果没通过密码验证就删除缓存*/
+$cache = cacheControl('read', $cachepath);
+/*Cache Processor End*/
 if (ifCacheStart() && !empty($cache[0]) && empty($passrq)) {
 	$output = $ifRequestFolder ? $cache[0] : handleRequest($requesturl);
 } else {
-	$cachepath = '/' . $pr;
 	$output = handleRequest($requesturl);
-	if (ifCacheStart() && pwdChallenge()) cacheControl('write', $cachepath, array($output));
+	if (ifCacheStart() && pwdChallenge()[0]) cacheControl('write', $cachepath, array($output));
 }
 if ($config['listAsJson']) header('Content-type:text/json;charset=utf-8');/*如果以Json返回就设定头*/
 echo $output;
