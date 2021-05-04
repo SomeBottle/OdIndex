@@ -326,7 +326,7 @@ function handleRequest($url, $returnurl = false, $requestForFile = false)
 	/*Normally request*/
 	$wrappedPath = wrapPath($path);
 	$rq = $config['api_url'] . '/me/drive/root' . $wrappedPath . ($RequestFolder ? ((empty($wrappedPath) ? '' : ':') . '/children') : '?select=name,eTag,createdDateTime,lastModifiedDateTime,size,id,folder,file,%40microsoft.graph.downloadUrl');/*从内而外：第一层判断是否有分页，第二层判断是请求的目录还算文件，第三层包装请求*/
-	$cache = cacheControl('read', '/' . $pr);/*请求的内容是否被缓存*/
+	$cache = cacheControl('read', $url);/*请求的内容是否被缓存*/
 	empty($cache[0]) ?: $queueid = queueChecker('add');/*如果有缓存也要加入队列计算*/
 	$resp = (ifCacheStart() && !empty($cache[0])) ? $cache[0] : pagRequest($url, $rq, $accessToken, $RequestFolder);
 	empty($cache[0]) ?: queueChecker('del', true, $queueid);/*如果有缓存也要移除队列计算*/
@@ -335,7 +335,7 @@ function handleRequest($url, $returnurl = false, $requestForFile = false)
 		if (isset($data['file'])) {/*返回的是文件*/
 			if ($returnurl) return $data["@microsoft.graph.downloadUrl"];/*直接返回Url，用于取得文件内容*/
 			if ($data['name'] == $config['pwdCfgPath']) die('Access denied');/*阻止密码被获取到*/
-			if (ifCacheStart() && !$cache) cacheControl('write', '/' . $pr, array($resp));/*只有下载链接储存缓存*/
+			if (ifCacheStart() && !$cache) cacheControl('write', $url, array($resp));/*只有下载链接储存缓存*/
 			/*构建文件下载链接缓存*/
 			if ($preview == 't') {/*预览模式*/
 				return handlePreview($data["@microsoft.graph.downloadUrl"], $data);/*渲染预览*/
