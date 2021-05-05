@@ -248,7 +248,8 @@ function pagRequest($prurl, $rq, $accessToken, $RequestFolder)
 {/*分页请求包装，算是一个Hook?*/
 	global $config, $pagAttr;
 	$resp = '';
-	if ($RequestFolder) {
+	if ($RequestFolder && $config['pagination']) {
+		if ($config['noIndex']) return '';/*没有开启列表就直接不用请求了*/
 		$nowPage = intval(getParam($prurl, 'o'));/*获得请求中的页码*/
 		$chunkedPage = 1;/*本地分块页数*/
 		$chunkedResp = '';/*缓冲块中的Resp*/
@@ -256,7 +257,7 @@ function pagRequest($prurl, $rq, $accessToken, $RequestFolder)
 		$totalPage = (empty($nowPage) || $nowPage < 0) ? 1 : $nowPage;/*如果没有页码默认是请求第一页*/
 		$pagAttr['current'] = $totalPage;/*更新当前页码*/
 		$chunkRequestSize = $config['itemsPerPage'] * 5;/*缓冲分块，在缓冲块内的分页将在本地完成*/
-		$rq = $rq . ($config['pagination'] ? '?$top=' . $chunkRequestSize : '');/*重构建请求url*/
+		$rq = $rq . '?$top=' . $chunkRequestSize;/*重构建请求url*/
 		$linkForRequest = $rq;
 		while ($chunkedPage <= $totalPage) {
 			$chunkedResp = $chunkSize == 1 ? request($linkForRequest, '', 'GET', array(
@@ -349,6 +350,8 @@ function handleRequest($url, $returnurl = false, $requestForFile = false)
 			$jsonarr['msg'] = 'Error response:' . var_export($resp, true);
 			return ($config['listAsJson'] ? json_encode($jsonarr, true) : 'Error response:' . var_export($resp, true));
 		}
+	} else if ($config['noIndex']) {
+		return $config['noIndexPrint'];
 	} else {
 		$jsonarr['msg'] = 'Not found: ' . urldecode($path);
 		echo ($config['listAsJson'] ? json_encode($jsonarr, true) : '<!--NotFound:' . urldecode($path) . '-->');
@@ -484,7 +487,6 @@ function pwdChallenge()
 function renderFolderIndex($items, $isIndex)
 {/*渲染目录列表*/
 	global $config, $pr, $pagAttr;
-	if ($config['noIndex']) return $config['noIndexPrint'];
 	$jsonarr = ['success' => true, 'currentPath' => nowPath(), 'currentPage' => $pagAttr['current'], 'nextPageExist' => $pagAttr['nextExist'], 'prevPageExist' => $pagAttr['prevExist'], 'folders' => [], 'files' => []];/*初始化Json*/
 	$itemrender = '';/*文件列表渲染变量*/
 	$backhref = '..';
