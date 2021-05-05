@@ -13,7 +13,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 ## Features & Drawbacks  
 * 自动更新token(除非非常非常久没访问)  
 * 可以进行转发下载（**过服务器流量的那种**[建议是国外服务器]，但能快很多）   
-* [简单配置](#世纪互联测试)后可以搭配**世纪互联版Onedrive**  
+* [简单配置](#世纪互联)后可以搭配**世纪互联版Onedrive**  
 * 鼠标悬停预览  
 * 使用[github-markdown-css](https://github.com/sindresorhus/github-markdown-css)进行markdown的渲染    
 * 使用[Prism.js](https://github.com/PrismJS/prism)来渲染简单的代码高亮  
