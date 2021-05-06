@@ -55,7 +55,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
     rewrite ^/(.*)$ /?/$1 last;
   }
   ```
-  如果是**非根目录**，要在伪静态规则上作相应调整。  
+  如果是**非根目录**，要在伪静态规则上作[相应调整](#rerewrite)。  
   
 ## Thumbnail缩略图  
 对于图片文件，可以直接获取不同尺寸的缩略图。 比如：https://xxx/pics/loli.png?thumbnail=medium  
@@ -174,7 +174,7 @@ $config = array(
 
 * **值得注意的是，rewrite=false时，sitepath最好留空，用不着**   
 
-* 当你开启了重定向并设置了sitepath，需要对应**修改重定向规则：**  
+* <a id="rerewrite">当你开启了重定向并设置了sitepath</a>，需要对应**修改重定向规则：**  
   ```
   #(比如sitepath设置为/test)  
   rewrite ^/(.*)$ /?/$1 last;  
