@@ -86,7 +86,7 @@ PS：这个规则可以保护目录及**目录下的所有子目录和文件**�
     ```{{ItemSingle}}{{ItemSingleEnd}}``` 之间是单个列表中的项目的模板  
     ```{{PaginationSingle}}{{PaginationSingleEnd}}``` 之间是列表中的翻页部分的模板  
     ```{{PaginationPrev}}{{PaginationPrevEnd}}``` 之间是翻页部分后退按钮的模板   
-    ```{{PaginationNext}}{{PaginationNextEnd}}``` 之间是翻页部分前进按钮的模板 
+    ```{{PaginationNext}}{{PaginationNextEnd}}``` 之间是翻页部分前进按钮的模板  
     ```{{PreviewBody}}{{PreviewBodyEnd}}``` 之间是预览的主体模板  
     ```{{ImgPreview}}{{ImgPreviewEnd}}``` 之间是图片预览的内容模板  
     ```{{AudioPreview}}{{AudioPreviewEnd}}``` 之间是音频预览的内容模板  
