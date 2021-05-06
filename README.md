@@ -259,6 +259,8 @@ $config = array(
 
 * pwdProtect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
 
+* <a id='pwdConfigUpdateInterval'>pwdConfigUpdateInterval</a>是**密码配置文件缓存过期**的时长，单位为秒。每次请求密码配置文件后配置文件会被**暂时缓存在本地**(以减少重复请求的情况)，每隔这段时间进行重新请求而刷新。  
+
 * pagination设置为true则**开启分页**，每页展示的项目数量由**itemsPerPage**决定，因为微软api的缺陷，建议把**itemsPerPage**设置为**20-40**，太小了会增加请求负担，太大了会增加服务器处理负担      
 
 
@@ -303,6 +305,8 @@ SmartQueue会在游客对文件造成大量请求时防止并发情况出现，�
 * lastfor 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比SmartCache的设置更长一点**.  
 
 ## Notice  
+
+* 因为在[密码缓存过期](#pwdConfigUpdateInterval)的时候服务器要进行重新请求，故此时访问OdIndex页面**会比平常慢上一段时间**。咱的建议是设置一个crontab任务，每间隔一段时间访问一下网页以及时刷新密码配置。  
 
 * 访问目录时末尾一定要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会出现链接bug.  
 
