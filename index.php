@@ -725,9 +725,11 @@ function ifCacheStart()
 }
 function smartCache()
 {/*处理缓存(还包括队列)*/
-	global $config;
+	global $config, $cacheInitialization;
 	if (!$config['cache']['smart']) return false;/*未开启缓存直接返回*/
+	$keyNum = count($cacheInitialization);/*校验初始化的时候配置文件有几个键*/
 	$cacheNow = getConfig('cache.json');
+	if (count($cacheNow) !== $keyNum) $cacheNow = $cacheInitialization;/*如果校验发现配置丢失就重新初始化*/
 	$queueconf = getConfig('queue.json');
 	$lag = time() - $cacheNow['lastcount'];
 	if ($lag >= 30) {
