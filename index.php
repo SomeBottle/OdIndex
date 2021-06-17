@@ -131,6 +131,10 @@ function request($u, $q, $method = 'POST', $head = array('Content-type:applicati
 			'header' => $head,
 			'timeout' => 15 * 60, // 超时时间（单位:s）
 			'content' => $rqcontent
+		),
+		'ssl' => array(
+			'verify_peer' => false,
+			'verify_peer_name' => false,
 		)
 	);
 	smartCache();/*智能缓存*/
