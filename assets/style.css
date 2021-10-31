@@ -65,7 +65,8 @@ a.item:hover {
 }
 
 .readme {
-    margin: 2em 0;
+    margin: 1.1em 0;
+    background-color: rgba(0, 0, 0, 0);
 }
 
 footer {
