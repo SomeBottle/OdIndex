@@ -18,7 +18,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 * 使用[github-markdown-css](https://github.com/sindresorhus/github-markdown-css)进行markdown的渲染    
 * 使用[Prism.js](https://github.com/PrismJS/prism)来渲染简单的代码高亮  
 * 支持站点非根目录  
-* smartCache缓存系统  
+* autoCache文件缓存  
 * 支持缩略图获取  
 * 支持密码保护目录**以及目录下面的文件**  
 * **没有**文件上传功能  
@@ -28,7 +28,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 
 
 ## To-do list
-- [x] smartCache 智能缓存（其实并不智能）  
+- [x] autoCache 文件缓存  
 - [x] 支持根目录文件列表  
 - [x] 文件简单预览  
 - [x] 文件复杂预览  
@@ -38,7 +38,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 ## Deployment  
 1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , template.html**丢进去  
 
-2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index#deployment' target='_blank'>Beetcb</a>的方式获取refresh_token   
+2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index/blob/main/README-CN.md' target='_blank'>Beetcb</a>的方式获取refresh_token   
 
 3. 在index.php[**设置**](#Config)相关参数  
 
@@ -132,9 +132,9 @@ $config = array(
 	"oauth_url" => "https://login.microsoftonline.com/common/oauth2/v2.0",
 	"redirect_uri" => "http://localhost",
 	'base' => '/',
-	'datapath' => 'data',
+	'data_path' => 'data',
 	'rewrite' => false,
-	'sitepath' => '',
+	'site_path' => '',
 	"cache" => array(
 		'smart' => true,
 		'expire' => 1800, /*In seconds*/
@@ -142,41 +142,41 @@ $config = array(
 	),
 	'queue' => array(
 		'start' => true,/*防并发请求队列*/
-		'maxnum' => 15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
-		'lastfor' => 2700 /*In seconds*/
+		'max_num' => 15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
+		'last_for' => 2700 /*In seconds*/
 	),
-	'servicebusy' => 'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
+	'service_busy' => 'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
 	'thumbnail' => true,
 	'preview' => true,
-	'maxpreviewsize' => 314572, /*最大支持预览的文件大小(in bytes)*/
-	'previewsuffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
-	'useProxy' => false,
-	'proxyPath' => false, /*代理程序url，false则用本目录下的*/
-	'noIndex' => false, /*关闭列表*/
-	'noIndexPrint' => 'Static powered by OdIndex', /*关闭列表访问列表时返回什么*/
-	'listAsJson' => false, /*改为返回json*/
-	'pwdCfgPath' => '.password', /*密码配置文件路径*/
-	'pwdProtect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
-	'pwdConfigUpdateInterval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
+	'max_preview_size' => 314572, /*最大支持预览的文件大小(in bytes)*/
+	'preview_suffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
+	'use_proxy' => false,
+	'proxy_path' => false, /*代理程序url，false则用本目录下的*/
+	'no_index' => false, /*关闭列表*/
+	'no_index_print' => 'Static powered by OdIndex', /*关闭列表访问列表时返回什么*/
+	'list_as_json' => false, /*改为返回json*/
+	'pwd_cfg_path' => '.password', /*密码配置文件路径*/
+	'pwd_protect' => true,/*是否采用密码保护，这会稍微多占用一些程序资源*/
+	'pwd_cfg_update_interval' => 1200, /*密码配置文件本地缓存时间(in seconds)*/
 	'pagination' => true, /*是否开启分页*/
-	'itemsPerPage' => 20 /*每页的项目数量，用于分页,建议设置为20-35*/
+	'items_per_page' => 20 /*每页的项目数量，用于分页(推荐设置为20-35)*/
 );
 ```
 * base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为**留空**  
 
-* preview配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.previewsuffix是支持预览的文件格式，**不建议修改**.  
+* preview配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.preview_suffix是支持预览的文件格式，**不建议修改**.  
 
-* sitepath配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
+* site_path配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
   ```php
-    'sitepath'=>'/onedrive',  
+    'site_path'=>'/onedrive',  
     //末尾不要斜杠！  
   ```
 
-* **值得注意的是，rewrite=false时，sitepath最好留空，用不着**   
+* **值得注意的是，rewrite=false时，site_path最好留空，用不着**   
 
-* <a id="rerewrite">当你开启了重定向并设置了sitepath</a>，需要对应**修改重定向规则：**  
+* <a id="rerewrite">当你开启了重定向并设置了site_path</a>，需要对应**修改重定向规则：**  
   ```
-  #(比如sitepath设置为/test)  
+  #(比如site_path设置为/test)  
   rewrite ^/(.*)$ /?/$1 last;  
 
   #改为
@@ -185,17 +185,17 @@ $config = array(
 
   ```
 
-* useProxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
+* use_proxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
 
-* 如果odproxy.php和index.php不是相同目录下的，需要配置**proxyPath**.例如https://xxx/odproxy.php .   
+* 如果odproxy.php和index.php不是相同目录下的，需要配置**proxy_path**.例如https://xxx/odproxy.php .   
 
 * rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
 
-* datapath配置项指的是数据的储存目录，默认配置成data，OdIndex的部分数据就会储存在data目录下  
+* data_path配置项指的是数据的储存目录，默认配置成data，OdIndex的部分数据就会储存在data目录下  
 
-* 当noIndex配置为true时，**除了访问文件外**一律返回**noIndexPrint**内的内容  
+* 当no_index配置为true时，**除了访问文件外**一律返回**no_index_print**内的内容  
 
-* 当listAsJson配置为true时，所有的返回内容都会变成**Json**形式：  
+* 当list_as_json配置为true时，所有的返回内容都会变成**Json**形式：  
 
   **正常返回:**
   ```json
@@ -241,7 +241,7 @@ $config = array(
   ```  
   **Json返回模式下不支持预览：**  
   ```json
-  {"success":false,"msg":"Preview not available under listAsJson Mode"}
+  {"success":false,"msg":"Preview not available under list_as_json Mode"}
   ```
   **访问文件时的返回：**  
   ```json
@@ -254,14 +254,14 @@ $config = array(
   }
   ```
 
-* <a id="pwdCfgPath">pwdCfgPath</a>是你的密码的配置文件路径，默认是.password，也就是列表根目录的.password文件.如果你想配置成在列表Test目录内的passwordconfig文件可以这样写：  
-  ```pwdCfgPath=>'Test/passwordconfig',```  
+* <a id="pwdCfgPath">pwd_cfg_path</a>是你的密码的配置文件路径，默认是.password，也就是列表根目录的.password文件.如果你想配置成在列表Test目录内的passwordconfig文件可以这样写：  
+  ```pwd_cfg_path=>'Test/passwordconfig',```  
 
-* pwdProtect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
+* pwd_protect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
 
-* <a id='pwdConfigUpdateInterval'>pwdConfigUpdateInterval</a>是**密码配置文件缓存过期**的时长，单位为秒。每次请求密码配置文件后配置文件会被**暂时缓存在本地**(以减少重复请求的情况)，每隔这段时间进行重新请求而刷新。  
+* <a id='pwdConfigUpdateInterval'>pwd_cfg_update_interval</a>是**密码配置文件缓存过期**的时长，单位为秒。每次请求密码配置文件后配置文件会被**暂时缓存在本地**(以减少重复请求的情况)，每隔这段时间进行重新请求而刷新。  
 
-* pagination设置为true则**开启分页**，每页展示的项目数量由**itemsPerPage**决定，因为微软api的缺陷，建议把**itemsPerPage**设置为**20-40**，太小了会增加请求负担，太大了会增加服务器处理负担      
+* pagination设置为true则**开启分页**，每页展示的项目数量由**items_per_page**决定，因为微软api的缺陷，建议把**items_per_page**设置为**20-40**，太小了会增加请求负担，太大了会增加服务器处理负担      
 
 
 ## 世纪互联  
@@ -273,7 +273,7 @@ $config = array(
 "oauth_url"=>"https://login.partner.microsoftonline.cn/common/oauth2/v2.0", 
 ```
 
-## Smart Cache  
+## Auto Cache (文件缓存)  
 ```php
 "cache"=>array(
     'smart'=>true,
@@ -282,13 +282,13 @@ $config = array(
 ),
 ```
 
-SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配置项只有以上三个。  
+AutoCache会在你的文件目录被大量访问时**自动缓存目录**，配置项只有以上三个。  
 
-* smart 若为true则开启smartCache  
+* smart 若为true则开启autoCache  
 * expire 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
 * 当**force**设为true时开启强制缓存，此时用户访问的页面都会被缓存，**经过expire时间**后缓存会自动清除  
 
-## Smart Queue  
+## The Queue  
 ```php
 'queue'=>array(
      'start'=>true,/*防并发请求队列*/
@@ -298,11 +298,11 @@ SmartCache会在你的文件目录被大量访问时**自动缓存目录**，配
 'servicebusy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',
 ```
 
-SmartQueue会在游客对文件造成大量请求时防止并发情况出现，可以有效防止账户被微软限制.  
+TheQueue会在游客对文件造成大量请求时防止并发情况出现，可以有效防止账户被微软限制.  
 
 * maxnum 是队列中存在的最多请求数，每请求一个未缓存页面、一个文件，在请求未完成之时全部当排队请求，而当**排队请求的量**超过了maxnum，会直接返回服务繁忙，也就是servicebusy的图片.  
 
-* lastfor 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比SmartCache的设置更长一点**.  
+* lastfor 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比AutoCache的设置更长一点**.  
 
 ## Notice  
 
@@ -313,7 +313,7 @@ SmartQueue会在游客对文件造成大量请求时防止并发情况出现，�
 * 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换refresh_token，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的refreshtoken**即可.  
 
 ## Thanks  
-* [LemonPerfect](https://github.com/LemonPrefect/)  提供了密码保护目录以及目录下文件的思路  
+* [LemonPrefect](https://github.com/LemonPrefect/)  提供了密码保护目录以及目录下文件的思路  
 * [wangjiale1125](https://github.com/wangjiale1125)  协助测试世纪互联    
 * [Micraow](https://github.com/Micraow)  提出了预览相关的意见  
 
