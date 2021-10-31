@@ -341,6 +341,7 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 			$render = renderFolderIndex($data['value'], parsePath($url));/*渲染目录*/
 			return $render;
 		} else {
+			unset($resp['@odata.context']);/*防止泄露onedrive账号邮箱*/
 			$jsonArr['msg'] = 'Error response:' . var_export($resp, true);
 			return ($config['list_as_json'] ? json_encode($jsonArr, true) : 'Error response:' . var_export($resp, true));
 		}
