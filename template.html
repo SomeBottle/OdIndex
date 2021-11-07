@@ -27,14 +27,14 @@
     </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
-<script src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
 <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
 <script>
     var readmefile = "{[ReadmeFile]}";
     async function renderReadme() {
         const resp = await fetch(readmefile)
         if (!resp.ok) return
-        document.querySelector("#readme").innerHTML = window.marked(await resp.text());
+        document.querySelector("#readme").innerHTML = window.markdownit().render(await resp.text());
         Prism.highlightAll()
     }
 
@@ -159,9 +159,9 @@
         <div class='previewtext markdown-body' id='md'>{[FileContent]}</div>
     </div>
 </div>
-<script src='https://cdn.jsdelivr.net/npm/marked/marked.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
 <script>
-    document.getElementById('md').innerHTML=marked(document.getElementById('md').innerHTML);
+    document.getElementById('md').innerHTML=window.markdownit().render(document.getElementById('md').innerHTML);
 </script>
 {{MDPreviewEnd}}
 {{CodePreview}}
