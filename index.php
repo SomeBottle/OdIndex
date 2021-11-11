@@ -15,7 +15,7 @@ $config = array(
 	"api_url" => "https://graph.microsoft.com/v1.0",
 	"oauth_url" => "https://login.microsoftonline.com/common/oauth2/v2.0",
 	"redirect_uri" => "http://localhost",
-	'base' => '/',
+	'base' => '',
 	'data_path' => 'data',
 	'rewrite' => false,
 	'site_path' => '',
@@ -337,8 +337,9 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 			} else {
 				handleFile($data["@microsoft.graph.downloadUrl"], $data);/*下载文件*/
 			}
-		} else if (isset($data['value'])) {/*返回的是目录*/
-			$render = renderFolderIndex($data['value'], parsePath($url));/*渲染目录*/
+		} else if (array_key_exists('value', $data)) {/*返回的是目录*/
+			/*渲染目录,2021.11.11修复空目录返回空白的bug*/
+			$render = renderFolderIndex(($data['value'] ? $data['value'] : []), parsePath($url));
 			return $render;
 		} else {
 			$resp = json_decode($resp, true);
@@ -349,6 +350,7 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 	} else if ($config['no_index']) {
 		return $config['no_index_print'];
 	} else {
+		http_response_code(404);/*找不到文件就返回404，以便处理2021.11.11*/
 		$jsonArr['msg'] = 'Not found: ' . urldecode($path);
 		echo ($config['list_as_json'] ? json_encode($jsonArr, true) : '<!--NotFound:' . urldecode($path) . '-->');
 		return '';/*当文件或目录不存在的时候返回空，以免缓存记录*/

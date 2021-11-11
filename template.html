@@ -1,4 +1,5 @@
 {{Body}}
+
 <head>
     <meta name="renderer" content="webkit">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -31,10 +32,21 @@
 <script src="https://cdn.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
 <script>
     var readmefile = "{[ReadmeFile]}";
+
+    function fHook(resp) { /*用于判断fetch状态码的一个hook*/
+        let statusStart = Math.floor(resp.status / 100);
+        if ([2, 3].includes(statusStart)) {
+            return resp;
+        } else {
+            throw resp.status;
+        }
+    }
     async function renderReadme() {
         const resp = await fetch(readmefile)
         if (!resp.ok) return
-        document.querySelector("#readme").innerHTML = window.markdownit().render(await resp.text());
+        document.querySelector("#readme").innerHTML = window.markdownit().render(await fHook(resp).text().catch(e => {
+            throw e;
+        }));
         Prism.highlightAll()
     }
 
@@ -45,9 +57,7 @@
         if (Math.abs(bytes) < thresh) {
             return bytes + ' B';
         }
-        var units = si ?
-            ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] :
-            ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        var units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
         var u = -1;
         do {
             bytes /= thresh;
@@ -61,7 +71,7 @@
         document.querySelectorAll("a.item").forEach(function(i) {
             i.insertAdjacentHTML('beforeend',
                 '<div style="flex-grow:1"></div>' +
-                ((i.hasAttribute("size")&&Number(i.getAttribute("size"))>0) ? '<span class="size">' + humanFileSize(i.getAttribute("size"), true) + '</span>' : '')
+                ((i.hasAttribute("size") && Number(i.getAttribute("size")) > 0) ? '<span class="size">' + humanFileSize(i.getAttribute("size"), true) + '</span>' : '')
             )
         })
 
@@ -69,25 +79,18 @@
 
     renderReadme().catch(console.error)
 </script>
-{{BodyEnd}} 
-{{PathSingle}}
-<a href='{[FolderLink]}'>{[FolderName]}</a> 
-{{PathSingleEnd}} 
-{{ItemSingle}}
-<a href="{[ItemLink]}" class="item" size="{[ItemSize]}" mimetype="{[MimeType]}" lastmodified="{[LastModifiedDateTime]}" created="{[CreatedDateTime]}"><i class="material-icons">{[MimeIcon]}</i>{[ItemName]}</a> 
-{{ItemSingleEnd}}
-{{PaginationSingle}}
+{{BodyEnd}} {{PathSingle}}
+<a href='{[FolderLink]}'>{[FolderName]}</a> {{PathSingleEnd}} {{ItemSingle}}
+<a href="{[ItemLink]}" class="item" size="{[ItemSize]}" mimetype="{[MimeType]}" lastmodified="{[LastModifiedDateTime]}" created="{[CreatedDateTime]}"><i class="material-icons">{[MimeIcon]}</i>{[ItemName]}</a> {{ItemSingleEnd}} {{PaginationSingle}}
 <div class='pagination'>
     {[Prev]}{[Next]}
 </div>
-{{PaginationSingleEnd}}
-{{PaginationPrev}}
+{{PaginationSingleEnd}} {{PaginationPrev}}
 <input type='button' class='prevpage' value='←' onclick="location.href='{[PrevLink]}'"></input>
-{{PaginationPrevEnd}}
-{{PaginationNext}}
+{{PaginationPrevEnd}} {{PaginationNext}}
 <input type='button' class='nextpage' value='→' onclick="location.href='{[NextLink]}'"></input>
-{{PaginationNextEnd}}
-{{PreviewBody}}
+{{PaginationNextEnd}} {{PreviewBody}}
+
 <head>
     <meta name="renderer" content="webkit">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -114,46 +117,42 @@
             function jumpreview() {
                 window.open('{[PreviewUrl]}', '_blank');
             }
-            var dl=location.href.split('?');
-	        dl.pop();
-	        dl=dl.join('?');
-	        document.getElementById('du').value=dl;
-			function down() {
+            var dl = location.href.split('?');
+            dl.pop();
+            dl = dl.join('?');
+            document.getElementById('du').value = dl;
+
+            function down() {
                 window.open(dl, '_self');
             }
         </script>
     </div>
 </body>
-{{PreviewBodyEnd}}
-{{ImgPreview}}
+{{PreviewBodyEnd}} {{ImgPreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <img style='max-width:100%' src='{[FileRawUrl]}'></img>
     </div>
 </div>
-{{ImgPreviewEnd}}
-{{AudioPreview}}
+{{ImgPreviewEnd}} {{AudioPreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <audio style='width:80%;margin:10px 0;' src="{[FileRawUrl]}" controls="controls"></audio>
     </div>
 </div>
-{{AudioPreviewEnd}}
-{{VideoPreview}}
+{{AudioPreviewEnd}} {{VideoPreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <video style='max-width:100%' src='{[FileRawUrl]}' controls="controls"></video>
     </div>
 </div>
-{{VideoPreviewEnd}}
-{{TxtPreview}}
+{{VideoPreviewEnd}} {{TxtPreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <div class='previewtext markdown-body'><pre><code>{[FileContent]}</code></pre></div>
     </div>
 </div>
-{{TxtPreviewEnd}}
-{{MDPreview}}
+{{TxtPreviewEnd}} {{MDPreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <div class='previewtext markdown-body' id='md'>{[FileContent]}</div>
@@ -161,10 +160,9 @@
 </div>
 <script src='https://cdn.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
 <script>
-    document.getElementById('md').innerHTML=window.markdownit().render(document.getElementById('md').innerHTML);
+    document.getElementById('md').innerHTML = window.markdownit().render(document.getElementById('md').innerHTML);
 </script>
-{{MDPreviewEnd}}
-{{CodePreview}}
+{{MDPreviewEnd}} {{CodePreview}}
 <div class='previewitems'>
     <div style='min-width:300px'>
         <div class='previewtext markdown-body' id='codes'>
@@ -176,16 +174,15 @@
 <script>
     Prism.highlightAllUnder(document.getElementById('codes'));
 </script>
-{{CodePreviewEnd}}
-{{OfficePreview}}
+{{CodePreviewEnd}} {{OfficePreview}}
 <div class='previewitems'>
     <div style='min-width:300px;padding:10px 0;'>
         <h2 style='margin-top:0;'>此预览需要前往Office</h2>
         <input type='button' style='padding:10px 10px;' class='downbtn' value='点击跳转预览' onclick='jumpreview()'>
     </div>
 </div>
-{{OfficePreviewEnd}}
-{{PasswordPage}}
+{{OfficePreviewEnd}} {{PasswordPage}}
+
 <head>
     <meta name="renderer" content="webkit">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -208,7 +205,7 @@
                 <h2>输入密码以继续</h2>
                 <div class='passwordform'>
                     <form action="#" method="post" style="display: flex;flex: 1;">
-                        <input class='passwordinput' type="password" name="password" placeholder="password"></input><input type="hidden" name="requestfolder" value="{[FolderMD5]}"/><input type='submit' class='submitbtn' value='Submit'></input>
+                        <input class='passwordinput' type="password" name="password" placeholder="password"></input><input type="hidden" name="requestfolder" value="{[FolderMD5]}" /><input type='submit' class='submitbtn' value='Submit'></input>
                     </form>
                 </div>
             </div>
