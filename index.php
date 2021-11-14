@@ -284,6 +284,11 @@ function pagRequest($requestUrl, $queryUrl, $accessToken, $requestFolder)
 	}
 	return $resp;
 }
+function jump2folder()
+{
+	global $config, $pathQuery;
+	header('Location: ' . ($config['rewrite'] ? $pathQuery . '/' : '?/' . $pathQuery . '/'));/*如果是目录，没有带/的就跳转到有/的*/
+}
 function handleRequest($url, $returnUrl = false, $requestForFile = false)
 {
 	global $config, $ifRequestFolder;
@@ -341,11 +346,12 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 			/*渲染目录,2021.11.11修复空目录返回空白的bug*/
 			$render = renderFolderIndex(($data['value'] ? $data['value'] : []), parsePath($url));
 			return $render;
+		} else if (array_key_exists('folder', $data)) {/*没有value，但有目录，说明url末尾没有加/*/
+			return jump2folder();/*跳转到末尾有/的目录*/
 		} else {
-			$resp = json_decode($resp, true);
-			unset($resp['@odata.context']);/*防止泄露onedrive账号邮箱*/
-			$jsonArr['msg'] = 'Error response:' . var_export($resp, true);
-			return ($config['list_as_json'] ? json_encode($jsonArr, true) : 'Error response:' . var_export($resp, true));
+			unset($data['@odata.context']);/*防止泄露onedrive账号邮箱*/
+			$jsonArr['msg'] = 'Error response:' . var_export($data, true);
+			return ($config['list_as_json'] ? json_encode($jsonArr, true) : 'Error response:' . var_export($data, true));
 		}
 	} else if ($config['no_index']) {
 		return $config['no_index_print'];
@@ -807,23 +813,23 @@ if (empty($pathQuery)) {
 }
 $self = basename($_SERVER['PHP_SELF']);
 $pathQuery = str_ireplace($self, '', $pathQuery);
-$requesturl = 'http://request.yes/' . $pathQuery;
+$requestUrl = 'http://request.yes/' . $pathQuery;
 /*Request Path ProcessorEnd*/
 
 queueTimeCheck();/*检查是否超时*/
 
 /*Cache Processor*/
-$ifRequestFolder = substr(parsePath($requesturl), -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
-$cachepath = '/' . $pathQuery;
-if (!pwdChallenge()[0]) cacheClear($cachepath);/*如果没通过密码验证就删除缓存*/
-$cache = cacheControl('read', $cachepath);
+$ifRequestFolder = substr(parsePath($requestUrl), -1) == '/' ? true : false;/*如果请求路径以/结尾就算请求的是目录*/
+$cachePath = '/' . $pathQuery;
+if (!pwdChallenge()[0]) cacheClear($cachePath);/*如果没通过密码验证就删除缓存*/
+$cache = cacheControl('read', $cachePath);
 /*Cache Processor End*/
 
 if (ifCacheStart() && !empty($cache[0]) && empty($pwdRqFolder)) {
-	$output = $ifRequestFolder ? $cache[0] : handleRequest($requesturl);
+	$output = $ifRequestFolder ? $cache[0] : handleRequest($requestUrl);
 } else {
-	$output = handleRequest($requesturl);
-	if (ifCacheStart() && pwdChallenge()[0]) cacheControl('write', $cachepath, array($output));
+	$output = handleRequest($requestUrl);
+	if (ifCacheStart() && pwdChallenge()[0]) cacheControl('write', $cachePath, array($output));
 }
 
 if ($config['list_as_json']) header('Content-type:text/json;charset=utf-8');/*如果以Json返回就设定头*/
