@@ -42,7 +42,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 
 3. 在index.php[**设置**](#Config)相关参数  
 
-4. 设置伪静态:（可选）  
+4. 设置伪静态(重定向规则):（可选）  
   
   ```
   if (!-f $request_filename){
@@ -55,7 +55,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
     rewrite ^/(.*)$ /?/$1 last;
   }
   ```
-  如果是**非根目录**，要在伪静态规则上作[相应调整](#rerewrite)。  
+  如果是**非根目录**，要在重定向规则上作[相应调整](#rerewrite)。  
   
 ## Thumbnail缩略图  
 对于图片文件，可以直接获取不同尺寸的缩略图。 比如：https://xxx/pics/loli.png?thumbnail=medium  
@@ -172,7 +172,7 @@ $config = array(
     //末尾不要斜杠！  
   ```
 
-* **值得注意的是，rewrite=false时，site_path最好留空，用不着**   
+* **值得注意的是，rewrite=false（关闭重定向）时，site_path可以留空，用不着**   
 
 * <a id="rerewrite">当你开启了重定向并设置了site_path</a>，需要对应**修改重定向规则：**  
   ```
@@ -189,7 +189,7 @@ $config = array(
 
 * 如果odproxy.php和index.php不是相同目录下的，需要配置**proxy_path**.例如https://xxx/odproxy.php .   
 
-* rewrite配置项若开启，你必须配置伪静态，若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
+* rewrite配置项若开启，你必须配置伪静态（**重定向规则**），若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
 
 * data_path配置项指的是数据的储存目录，默认配置成data，OdIndex的部分数据就会储存在data目录下  
 

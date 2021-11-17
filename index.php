@@ -287,7 +287,7 @@ function pagRequest($requestUrl, $queryUrl, $accessToken, $requestFolder)
 function jump2folder()
 {
 	global $config, $pathQuery;
-	header('Location: ' . ($config['rewrite'] ? $pathQuery . '/' : '?/' . $pathQuery . '/'));/*如果是目录，没有带/的就跳转到有/的*/
+	header('Location: ' . ($config['rewrite'] ? ($config['site_path'] . '/' . $pathQuery . '/') : '?/' . $pathQuery . '/'));/*如果是目录，没有带/的就跳转到有/的*/
 }
 function handleRequest($url, $returnUrl = false, $requestForFile = false)
 {
@@ -410,6 +410,11 @@ function nowPath()
 	}
 	return $pathQuery;
 }
+function homePath()
+{
+	global $config;
+	return $config['rewrite'] ? $config['site_path'] . '/' : '?/';/*兼容没有使用重定向的情况*/
+}
 function pathItems()
 {/*生成导航区当前路径的模板,🥔 > / Previews / Codes /这种*/
 	global $config, $pathQuery;
@@ -437,8 +442,7 @@ function pwdForm($fmd5)
 	$content = rpTp('path', nowPath(), $passwordPage);
 	$content = rpTp('pathitems', pathItems(), $content);
 	$content = rpTp('foldermd5', $fmd5, $content);
-	$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
-	$content = rpTp('homepath', $homePath, $content);
+	$content = rpTp('homepath', homePath(), $content);
 	return $content;
 }
 function pwdConfigReader()
@@ -544,8 +548,7 @@ function renderHTML($items)
 	$construct = rpTp('pathitems', pathItems(), $construct);
 	$construct = rpTp('currentpage', $currentPage, $construct);
 	$construct = rpTp('items', $items, $construct);
-	$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
-	$construct = rpTp('homepath', $homePath, $construct);
+	$construct = rpTp('homepath', homePath(), $construct);
 	$construct = rpTp('readmefile', processHref('readme.md'), $construct);
 	return $construct;
 }
@@ -664,8 +667,7 @@ function handlePreview($url, $data)
 				break;
 		}
 		$template = rpTp('previewContent', $previewContent, $template);
-		$homePath = $config['rewrite'] ? '/' : '?/';/*兼容没有使用重定向的情况*/
-		$template = rpTp('homepath', $homePath, $template);
+		$template = rpTp('homepath', homePath(), $template);
 		$template = rpTp('filerawurl', $url, $template);
 		$template = rpTp('createddatetime', $createdTime, $template);
 		$template = rpTp('lastmodifieddatetime', $lastModifiedTime, $template);
