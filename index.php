@@ -476,7 +476,7 @@ function pwdChallenge()
 		if (empty($targetFolder)) continue;/*如果配置目录为空就跳过，防止匹配bug*/
 		if (stripos($currentPath, $targetFolder) === 0) {/*当前目录能匹配上目标目录，受密码保护*/
 			$folderMd5 = md5($targetFolder);/*得到目标foldermd5*/
-			if (!isset($_SESSION['passwd'][$folderMd5]) || $targetPwd !== $_SESSION['passwd'][$folderMd5]) {/*没有post密码或者密码错误*/
+			if (!isset($_SESSION['passwd'][$folderMd5]) || strtolower($targetPwd) !== $_SESSION['passwd'][$folderMd5]) {/*没有post密码或者密码错误*/
 				return [false, $folderMd5];/*不通过密码检查*/
 			} else {
 				return [true];
