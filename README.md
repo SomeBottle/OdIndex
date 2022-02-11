@@ -133,7 +133,7 @@ $config = array(
 	"redirect_uri" => "http://localhost",
 	'base' => '',
 	'data_path' => 'data',
-	'rewrite' => false,
+	'rewrite' => false, // 伪静态是否开启，如果网站服务器开启了伪静态请设置为true
 	'site_path' => '',
 	"cache" => array(
 		'smart' => true,
@@ -162,17 +162,17 @@ $config = array(
 	'items_per_page' => 20 /*每页的项目数量，用于分页(推荐设置为20-35)*/
 );
 ```
-* base配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，base项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为**留空**  
+* ```base```配置项用于规定展示onedrive根目录下哪个目录的内容.**例如**将你要展示列表的文件放在**onedrive根目录下的Share目录里面**，```base```项配置为 "**/Share**" 即可，如果你要展示**根目录的内容**，请将base项设置为**留空**  
 
-* preview配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.preview_suffix是支持预览的文件格式，**不建议修改**.  
+* ```preview```配置项用来配置是否开启**默认预览**，开启之后点击列表中的文件会默认进入**预览界面**.```preview_suffix```是支持预览的文件格式，**不建议修改**.  
 
-* site_path配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
+* ```site_path```配置项是为了适应**站点非根目录**的，如果你的站点类似于**https://xxx/** ，这一个配置项**留空**；如果你的站点类似于**https://xxx/onedrive/** ，那么这个配置项你就要改成：  
   ```php
     'site_path'=>'/onedrive',  
     //末尾不要斜杠！  
   ```
 
-* **值得注意的是，rewrite=false（关闭重定向）时，site_path可以留空，用不着**   
+* **值得注意的是，```rewrite=false```（关闭重定向）时，site_path可以留空，用不着**   
 
 * <a id="rerewrite">当你开启了重定向并设置了site_path</a>，需要对应**修改重定向规则：**  
   ```
@@ -185,17 +185,18 @@ $config = array(
 
   ```
 
-* use_proxy配置项用于启动转发下载，如果为true，调用直链时会自动用odproxy.php转发下载.  
+* ```use_proxy```配置项用于启动转发下载，如果为```true```，调用直链时会自动用odproxy.php转发下载.  
 
-* 如果odproxy.php和index.php不是相同目录下的，需要配置**proxy_path**.例如https://xxx/odproxy.php .   
+* 如果```odproxy.php```和```index.php```不是相同目录下的，需要配置**```proxy_path```**.例如https://xxx/odproxy.php .   
 
-* rewrite配置项若开启，你必须配置伪静态（**重定向规则**），若关闭，你可以用请求的方式访问.例如开了伪静态，你可以访问https://xxx/Document/ ，没有开伪静态，你需要访问https://xxx/?/Document/ 来进行访问。   
+* ```rewrite```配置项若设置为```true```，你必须配置伪静态（**重定向规则**）；若设置为```false```，你可以用请求的方式访问.  
+  例如开了伪静态，你可以访问```https://xxx/Document/``` ，没有开伪静态，你需要访问```https://xxx/?/Document/``` 来进行访问。   
 
-* data_path配置项指的是数据的储存目录，默认配置成data，OdIndex的部分数据就会储存在data目录下  
+* ```data_path```配置项指的是数据的储存目录，默认配置成```data```，OdIndex的部分数据就会储存在```data```目录下  
 
-* 当no_index配置为true时，**除了访问文件外**一律返回**no_index_print**内的内容  
+* 当```no_index```配置为```true```时，**除了访问文件外**一律返回**no_index_print**内的内容  
 
-* 当list_as_json配置为true时，所有的返回内容都会变成**Json**形式：  
+* 当```list_as_json```配置为```true```时，所有的返回内容都会变成**JSON**形式：  
 
   **正常返回:**
   ```json
@@ -254,19 +255,20 @@ $config = array(
   }
   ```
 
-* <a id="pwdCfgPath">pwd_cfg_path</a>是你的密码的配置文件路径，默认是.password，也就是列表根目录的.password文件.如果你想配置成在列表Test目录内的passwordconfig文件可以这样写：  
+* <a id="pwdCfgPath"><code>pwd_cfg_path</code></a>是你的密码的配置文件路径，默认是```.password```，也就是列表根目录的```.password```文件.  
+  **如果你想配置成**在列表Test目录内的```passwordconfig```文件可以这样写：  
   ```pwd_cfg_path=>'Test/passwordconfig',```  
 
-* pwd_protect如果设置为false**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
+* ```pwd_protect```如果设置为```false```**会直接忽略密码配置**，放行所有请求，但是能节省一定请求资源  
 
-* <a id='pwdConfigUpdateInterval'>pwd_cfg_update_interval</a>是**密码配置文件缓存过期**的时长，单位为秒。每次请求密码配置文件后配置文件会被**暂时缓存在本地**(以减少重复请求的情况)，每隔这段时间进行重新请求而刷新。  
+* <a id='pwdConfigUpdateInterval'><code>pwd_cfg_update_interval</code></a>是**密码配置文件缓存过期**的时长，单位为秒。每次请求密码配置文件后配置文件会被**暂时缓存在本地**(以减少重复请求的情况)，每隔这段时间进行重新请求而刷新。  
 
-* pagination设置为true则**开启分页**，每页展示的项目数量由**items_per_page**决定，因为微软api的缺陷，建议把**items_per_page**设置为**20-40**，太小了会增加请求负担，太大了会增加服务器处理负担      
+* ```pagination```设置为```true```则**开启分页**，每页展示的项目数量由**```items_per_page```**决定，因为微软api的缺陷，建议把**```items_per_page```**设置为**```20-40```**，太小了会增加请求负担，太大了会增加服务器处理负担      
 
 
 ## 世纪互联  
 
-编辑头部config中**api_url**和**oauth_url**内容为：  
+编辑头部config中**```api_url```**和**```oauth_url```**内容为：  
 
 ```php
 "api_url"=> "https://microsoftgraph.chinacloudapi.cn/v1.0", 
@@ -284,9 +286,9 @@ $config = array(
 
 AutoCache会在你的文件目录被大量访问时**自动缓存目录**，配置项只有以上三个。  
 
-* smart 若为true则开启autoCache  
-* expire 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
-* 当**force**设为true时开启强制缓存，此时用户访问的页面都会被缓存，**经过expire时间**后缓存会自动清除  
+* ```smart``` 若为true则开启autoCache  
+* ```expire``` 自动缓存开启后持续的时间，这段时间过去后缓存文件会被自动删除，一切恢复正常  
+* 当**```force```**设为true时开启强制缓存，此时用户访问的页面都会被缓存，**经过expire时间**后缓存会自动清除  
 
 ## The Queue  
 ```php
@@ -300,17 +302,17 @@ AutoCache会在你的文件目录被大量访问时**自动缓存目录**，配�
 
 TheQueue会在游客对文件造成大量请求时防止并发情况出现，可以有效防止账户被微软限制.  
 
-* max_num 是队列中存在的最多请求数，每请求一个未缓存页面、一个文件，在请求未完成之时全部当排队请求，而当**排队请求的量**超过了max_num，会直接返回服务繁忙，也就是service_busy的图片.  
+* ```max_num``` 是队列中存在的最多请求数，每请求一个未缓存页面、一个文件，在请求未完成之时全部当排队请求，而当**排队请求的量**超过了max_num，会直接返回服务繁忙，也就是service_busy的图片.  
 
-* last_for 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比AutoCache的设置更长一点**.  
+* ```last_for``` 是队列模式开启后持续的时间，按秒计算.超过这个时间后一切会恢复正常.**建议比AutoCache的设置更长一点**.  
 
 ## Notice  
 
 * 因为在[密码缓存过期](#pwdConfigUpdateInterval)的时候服务器要进行重新请求，故此时访问OdIndex页面**会比平常慢上一段时间**。咱的建议是设置一个crontab任务，每间隔一段时间访问一下网页以及时刷新密码配置。  
 
-* 访问目录时末尾要加上'/'，比如你想访问Document目录，访问https://xxx/Document/ 才是正确的，如果访问 https://xxx/Document 会帮你重定向到 https://xxx/Document.
+* 访问目录时末尾要加上'/'，如果访问 ```https://xxx/Document``` 会帮你重定向到 ```https://xxx/Document```.
 
-* 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换refresh_token，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的refreshtoken**即可.  
+* 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换```refresh_token```，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的```refreshtoken```**即可.  
 
 ## Thanks  
 * [LemonPrefect](https://github.com/LemonPrefect/)  提供了密码保护目录以及目录下文件的思路  
