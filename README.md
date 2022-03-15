@@ -38,7 +38,7 @@ SomeBottle's Onedrive Folder Index transplanted from Heymind.
 ## Deployment  
 1. 准备一个网站服务器，把仓库中**odproxy.php , index.php , template.html**丢进去  
 
-2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index/blob/main/README-CN.md' target='_blank'>Beetcb</a>的方式获取refresh_token   
+2. 按照<a href='https://github.com/spencerwooo/onedrive-cf-index/blob/main/README-CN.md#%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97' target='_blank'>Beetcb</a>的方式获取refresh_token   
 
 3. 在index.php[**设置**](#Config)相关参数  
 
