@@ -312,7 +312,7 @@ TheQueue会在游客对文件造成大量请求时防止并发情况出现，可
 
 * 访问目录时末尾要加上'/'，如果访问 ```https://xxx/Document``` 会帮你重定向到 ```https://xxx/Document```.
 
-* 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换```refresh_token```，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的```refreshtoken```**即可.  
+* 如果特别特别久没有访问了，显示 **Failed to get accesstoken. Maybe refresh_token expired** ，需要更换```refresh_token```，**删掉生成的token.php，在index.php头部修改配置为自行重新获取的```refreshtoken```即可**.  
 
 ## Thanks  
 * [LemonPrefect](https://github.com/LemonPrefect/)  提供了密码保护目录以及目录下文件的思路  
