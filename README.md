@@ -145,7 +145,7 @@ $config = array(
 		'max_num' => 15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
 		'last_for' => 2700 /*In seconds*/
 	),
-	'service_busy' => 'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
+	'service_busy' => 'https://fastly.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',/*队列过多时返回的“服务繁忙”图片url*/
 	'thumbnail' => true,
 	'preview' => true,
 	'max_preview_size' => 314572, /*最大支持预览的文件大小(in bytes)*/
@@ -297,7 +297,7 @@ AutoCache会在你的文件目录被大量访问时**自动缓存目录**，配�
      'max_num'=>15,/*队列中允许停留的最多请求数，其他请求直接返回服务繁忙*/
      'last_for'=>2700 /*In seconds*/
 ),
-'service_busy'=>'https://cdn.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',
+'service_busy'=>'https://fastly.jsdelivr.net/gh/SomeBottle/odindex/assets/unavailable.png',
 ```
 
 TheQueue会在游客对文件造成大量请求时防止并发情况出现，可以有效防止账户被微软限制.  
