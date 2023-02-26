@@ -472,7 +472,7 @@ function pwdChallenge()
 	foreach ($pwdCfg as $line) {
 		$singleConfig = explode(' ', $line);
 		$targetFolder = $singleConfig[0];/*获得每行配置的目标目录*/
-		$targetPwd = trim($singleConfig[1]);/*获得每行目录对应的md5密码*/
+		$targetPwd = md5(trim($singleConfig[1]));/*获得每行目录对应的md5密码*/
 		if (empty($targetFolder)) continue;/*如果配置目录为空就跳过，防止匹配bug*/
 		if (stripos($currentPath, $targetFolder) === 0) {/*当前目录能匹配上目标目录，受密码保护*/
 			$folderMd5 = md5($targetFolder);/*得到目标foldermd5*/
@@ -803,7 +803,7 @@ function queueChecker($statu, $waiting = false, $id = false)
 $pwdRqFolder = @$_POST['requestfolder'];
 $passwd = @$_POST['password'];
 if (!empty($pwdRqFolder)) {
-	$_SESSION['passwd'][$pwdRqFolder] = md5($passwd);/*提交并储存密码*/
+	$_SESSION['passwd'][$pwdRqFolder] = $passwd;/*提交并储存密码*/
 }
 @session_write_close();
 /*Password Receiver End*/
