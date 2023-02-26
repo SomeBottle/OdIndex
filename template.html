@@ -5,10 +5,10 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
-    <link href="https://fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
-    <link href='https://fastly.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.6.2/assets/woff.css' rel='stylesheet'>
-    <link href='https://fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <link href="//fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
+    <link href='//fastly.jsdelivr.net/gh/SomeBottle/OdIndex@1.2.6.2/assets/woff.css' rel='stylesheet'>
+    <link href='//fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
+    <link rel="stylesheet" href="//fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
     <title>OdIndex - /{[Path]}</title>
 </head>
 
@@ -27,9 +27,9 @@
         </div>
     </div>
 </body>
-<script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
-<script src='https://fastly.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
-<script src="https://fastly.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
+<script src="//fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src='//fastly.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
+<script src="//fastly.jsdelivr.net/gh/SomeBottle/othumb.js@0.8/othumb.m.js"></script>
 <script>
     var readmefile = "{[ReadmeFile]}";
 
@@ -96,9 +96,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
-    <link href="https://fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
-    <link href='https://fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <link href="//fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
+    <link href='//fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
+    <link rel="stylesheet" href="//fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
     <title>OdIndex Preview</title>
 </head>
 
@@ -158,7 +158,7 @@
         <div class='previewtext markdown-body' id='md'>{[FileContent]}</div>
     </div>
 </div>
-<script src='https://fastly.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
+<script src='//fastly.jsdelivr.net/npm/markdown-it@latest/dist/markdown-it.min.js'></script>
 <script>
     document.getElementById('md').innerHTML = window.markdownit().render(document.getElementById('md').innerHTML);
 </script>
@@ -170,7 +170,7 @@
         </div>
     </div>
 </div>
-<script src="https://fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+<script src="//fastly.jsdelivr.net/npm/prismjs/prism.min.js"></script>
 <script>
     Prism.highlightAllUnder(document.getElementById('codes'));
 </script>
@@ -188,9 +188,15 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
-    <link href="https://fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
-    <link href='https://fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <link href="//fastly.jsdelivr.net/gh/SomeBottle/OdIndex@3.2/assets/style.css" rel="stylesheet">
+    <link href='//fastly.jsdelivr.net/npm/github-markdown-css/github-markdown-light.css' rel='stylesheet'>
+    <link rel="stylesheet" href="//fastly.jsdelivr.net/npm/prismjs@1.17.1/themes/prism.min.css">
+    <script src='//fastly.jsdelivr.net/npm/js-md5@0.7.3/build/md5.min.js'></script>
+    <script>
+        function md5zme() {
+            document.getElementById('password').value = md5(md5(document.getElementById('password').value))
+        }
+    </script>
     <title>OdIndex - /{[Path]}</title>
 </head>
 
@@ -204,8 +210,8 @@
             <div style='min-width:300px'>
                 <h2>输入密码以继续</h2>
                 <div class='passwordform'>
-                    <form action="#" method="post" style="display: flex;flex: 1;">
-                        <input class='passwordinput' type="password" name="password" placeholder="password"></input><input type="hidden" name="requestfolder" value="{[FolderMD5]}" /><input type='submit' class='submitbtn' value='Submit'></input>
+                    <form action="#" method="post" style="display: flex;flex: 1;" onsubmit="md5zme()">
+                        <input class='passwordinput' type="password" name="password" id="password" placeholder="password"></input><input type="hidden" name="requestfolder" value="{[FolderMD5]}" /><input type='submit' class='submitbtn' value='Submit'></input>
                     </form>
                 </div>
             </div>
