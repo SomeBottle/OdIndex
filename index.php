@@ -343,6 +343,7 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 				handleFile($data["@microsoft.graph.downloadUrl"], $data);/*下载文件*/
 			}
 		} else if (array_key_exists('value', $data)) {/*返回的是目录*/
+			if (strpos($path, '/.') !== false) die('Access denied');/*阻止.开头的文件夹列出目录*/
 			/*渲染目录,2021.11.11修复空目录返回空白的bug*/
 			$render = renderFolderIndex(($data['value'] ? $data['value'] : []), parsePath($url));
 			return $render;
@@ -514,6 +515,7 @@ function renderFolderIndex($items, $isIndex)
 		$jsonArr['msg'] = 'Password required,please post the form: requestfolder=' . $folderMd5 . '&password=<thepassword>';
 	} else {
 		foreach ($items as $v) {
+			if (substr($v['name'], 0, 1) == '.') continue;
 			if (isset($v['folder'])) {/*是目录*/
 				$jsonArr['folders'][] = ['createdDateTime' => $v['createdDateTime'], 'lastModifiedDateTime' => $v['lastModifiedDateTime'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processHref($v['name'] . '/')];
 				$itemRender .= item("folder", $v['name'], $v, $v['size'], processHref($v['name'] . '/'));
