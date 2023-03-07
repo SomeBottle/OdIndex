@@ -33,7 +33,7 @@ $config = array(
 	'thumbnail' => true,
 	'preview' => true,
 	'max_preview_size' => 314572, /*最大支持预览的文件大小(in bytes)*/
-	'preview_suffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
+	'preview_suffix' => ['flac', 'ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
 	'use_proxy' => false,
 	'proxy_path' => false, /*代理程序url，false则用本目录下的*/
 	'no_index' => false, /*关闭列表*/
@@ -666,6 +666,7 @@ function handlePreview($url, $data)
 			case 'mp3':
 			case 'wav':
 			case 'm4a':
+			case 'flac':
 				$previewContent = getTp('audiopreview');
 				break;
 			default:
