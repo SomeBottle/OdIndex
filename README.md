@@ -1,6 +1,13 @@
 # OdIndex
 SomeBottle's Onedrive Folder Index transplanted from Heymind.  
 
+# End of Life
+
+已经有更强大且高性能的列表程序出现了: [AList](https://github.com/alist-org/alist)  
+个人精力有限，本项目将停止更新。感谢各位一直以来的使用，有缘再会~  
+
+------
+
 ![Show](https://ae02.alicdn.com/kf/H1d8707f64dd44392ab9555961f083b5dE.png)  
 
 最近发现Heymind写的<a href='https://github.com/heymind/OneDrive-Index-Cloudflare-Worker' target='_blank'>Cloudflare Worker</a>版的oneindex很好用，遂移植了一个php版本.（2.0进行了大更新）
