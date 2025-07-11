@@ -1,10 +1,13 @@
 # OdIndex
 SomeBottle's Onedrive Folder Index transplanted from Heymind.  
 
-# End of Life
+# Discontinued Maintenance
 
-已经有更强大且高性能的列表程序出现了: [AList](https://github.com/alist-org/alist)  
-个人精力有限，本项目将停止更新。感谢各位一直以来的使用，有缘再会~  
+已经有更强大且高性能的列表程序出现了: [OpenList](https://github.com/OpenListTeam/OpenList)    
+
+个人精力有限，本项目将停止维护。鉴于微软的 API 很少发生变动，本列表程序应该**在很长一段时间内**仍然能继续使用。  
+
+感谢各位一直以来的使用，有缘再会！  
 
 ------
 
