@@ -33,7 +33,7 @@ $config = array(
 	'thumbnail' => true,
 	'preview' => true,
 	'max_preview_size' => 314572, /*最大支持预览的文件大小(in bytes)*/
-	'preview_suffix' => ['ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
+	'preview_suffix' => ['flac', 'ogg', 'mp3', 'wav', 'm4a', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'md', 'markdown', 'txt', 'docx', 'pptx', 'xlsx', 'doc', 'ppt', 'xls', 'js', 'html', 'json', 'css'],/*可预览的类型,只少不多*/
 	'use_proxy' => false,
 	'proxy_path' => false, /*代理程序url，false则用本目录下的*/
 	'no_index' => false, /*关闭列表*/
@@ -289,6 +289,13 @@ function jump2folder()
 	global $config, $pathQuery;
 	header('Location: ' . ($config['rewrite'] ? ($config['site_path'] . '/' . $pathQuery . '/') : '?/' . $pathQuery . '/'));/*如果是目录，没有带/的就跳转到有/的*/
 }
+function zme404()
+{
+	http_response_code(404);/*找不到文件就返回404，以便处理2021.11.11*/
+	$jsonArr['msg'] = 'Not found: ' . urldecode($path);
+	echo ($config['list_as_json'] ? json_encode($jsonArr, true) : '<!--NotFound:' . urldecode($path) . '-->');
+	return '';/*当文件或目录不存在的时候返回空，以免缓存记录*/
+}
 function handleRequest($url, $returnUrl = false, $requestForFile = false)
 {
 	global $config, $ifRequestFolder;
@@ -335,7 +342,7 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 		$data = json_decode($resp, true);
 		if (isset($data['file'])) {/*返回的是文件*/
 			if ($returnUrl) return $data["@microsoft.graph.downloadUrl"];/*如果returnUrl=true就直接返回Url，用于取得文件内容*/
-			if ($data['name'] == $config['pwd_cfg_path']) die('Access denied');/*阻止密码文件被获取到*/
+			if ($data['name'] == $config['pwd_cfg_path']) return zme404();/*阻止密码文件被获取到*/
 			if (ifCacheStart() && !$cache) cacheControl('write', $url, array($resp));/*只有下载链接储存缓存*/
 			if ($preview == 't') {/*预览模式*/
 				return handlePreview($data["@microsoft.graph.downloadUrl"], $data);/*渲染预览*/
@@ -343,7 +350,8 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 				handleFile($data["@microsoft.graph.downloadUrl"], $data);/*下载文件*/
 			}
 		} else if (array_key_exists('value', $data)) {/*返回的是目录*/
-			/*渲染目录,2021.11.11修复空目录返回空白的bug*/
+            if (strpos($path, '/.') !== false) return zme404();/*阻止.开头的文件夹列出目录*/
+            /*渲染目录,2021.11.11修复空目录返回空白的bug*/
 			$render = renderFolderIndex(($data['value'] ? $data['value'] : []), parsePath($url));
 			return $render;
 		} else if (array_key_exists('folder', $data)) {/*没有value，但有目录，说明url末尾没有加/*/
@@ -356,10 +364,7 @@ function handleRequest($url, $returnUrl = false, $requestForFile = false)
 	} else if ($config['no_index']) {
 		return $config['no_index_print'];
 	} else {
-		http_response_code(404);/*找不到文件就返回404，以便处理2021.11.11*/
-		$jsonArr['msg'] = 'Not found: ' . urldecode($path);
-		echo ($config['list_as_json'] ? json_encode($jsonArr, true) : '<!--NotFound:' . urldecode($path) . '-->');
-		return '';/*当文件或目录不存在的时候返回空，以免缓存记录*/
+		return zme404();
 	}
 }
 function item($icon, $fileName, $rawData = false, $size = false, $href = false)
@@ -514,6 +519,7 @@ function renderFolderIndex($items, $isIndex)
 		$jsonArr['msg'] = 'Password required,please post the form: requestfolder=' . $folderMd5 . '&password=<thepassword>';
 	} else {
 		foreach ($items as $v) {
+			if (substr($v['name'], 0, 1) == '.') continue;
 			if (isset($v['folder'])) {/*是目录*/
 				$jsonArr['folders'][] = ['createdDateTime' => $v['createdDateTime'], 'lastModifiedDateTime' => $v['lastModifiedDateTime'], 'name' => $v['name'], 'size' => $v['size'], 'link' => processHref($v['name'] . '/')];
 				$itemRender .= item("folder", $v['name'], $v, $v['size'], processHref($v['name'] . '/'));
@@ -660,6 +666,7 @@ function handlePreview($url, $data)
 			case 'mp3':
 			case 'wav':
 			case 'm4a':
+			case 'flac':
 				$previewContent = getTp('audiopreview');
 				break;
 			default:
